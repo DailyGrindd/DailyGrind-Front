@@ -1,10 +1,22 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import { Provider } from "react-redux";
+import { store } from "./store/store";
+import "./index.css";
+import { Toaster } from "sonner";
+import { checkSessionThunk } from "./store/authSlice";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+store.dispatch(checkSessionThunk()); // Para que al recargar la página se mantenga la sesión activa si el token es válido
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <Provider store={store}>
+        <App />
+        <Toaster richColors position="top-right" />
+      </Provider>
+    </BrowserRouter>
+  </React.StrictMode>
+);
