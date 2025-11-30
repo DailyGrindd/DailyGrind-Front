@@ -1,4 +1,4 @@
-import type { LoginRequest, LoginResponse } from "../types/user";
+import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "../types/user";
 import { instanceAxios } from "../api/axios";
 
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -10,6 +10,34 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
             error.response?.data?.error ||
             error.response?.data?.message ||
             "Credenciales inválidas o error de servidor";
+        throw new Error(message);
+    }
+};
+
+export const register = async (userData: RegisterRequest): Promise<RegisterResponse> => {
+    try {
+        const { data } = await instanceAxios.post<RegisterResponse>("/users/register", userData);
+        return data;
+    } catch (error: any) {
+        const message =
+            error.response?.data?.error ||
+            error.response?.data?.message ||
+            "Error al registrar usuario";
+        throw new Error(message);
+    }
+};
+
+export const checkAvailability = async (email: string, userName: string) => {
+    try {
+        const { data } = await instanceAxios.get("/users/check-availability", {
+            params: { email, userName }
+        });
+        return data;
+    } catch (error: any) {
+        const message =
+            error.response?.data?.error ||
+            error.response?.data?.message ||
+            "Error al verificar disponibilidad";
         throw new Error(message);
     }
 };
