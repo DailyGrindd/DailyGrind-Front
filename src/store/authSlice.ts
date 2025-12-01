@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { AuthUser, LoginRequest } from "../types/user";
-import { login as loginService, logoutRequest, checkSession} from "../services/userServices";
+import type { AuthUser, LoginRequest, FirebaseRegisterRequest } from "../types/user";
+import { login as loginService, logoutRequest, checkSession, loginWithGoogle, registerWithGoogle } from "../services/userServices";
 
 interface AuthState {
   user: AuthUser | null;
@@ -25,6 +25,30 @@ export const loginThunk = createAsyncThunk(
       return data.user;
     } catch (err: any) {
       return rejectWithValue(err.message || "Error en login");
+    }
+  }
+);
+
+export const loginWithGoogleThunk = createAsyncThunk(
+  "auth/loginWithGoogle",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await loginWithGoogle();
+      return data.user;
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Error al hacer login con Google");
+    }
+  }
+);
+
+export const registerWithGoogleThunk = createAsyncThunk(
+  "auth/registerWithGoogle",
+  async (userData: Omit<FirebaseRegisterRequest, 'idToken'>, { rejectWithValue }) => {
+    try {
+      const data = await registerWithGoogle(userData);
+      return data.user;
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Error al registrar con Google");
     }
   }
 );
@@ -56,6 +80,10 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+    clearAuthError(state) {
+      state.error = null;
+      state.loading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -71,6 +99,32 @@ const authSlice = createSlice({
       })
       .addCase(loginThunk.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // login with Google
+      .addCase(loginWithGoogleThunk.pending, (state) => {
+        // No cambiar loading para evitar que la página se ponga en blanco
+        state.error = null;
+      })
+      .addCase(loginWithGoogleThunk.fulfilled, (state, action: PayloadAction<AuthUser>) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(loginWithGoogleThunk.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+
+      // register with Google
+      .addCase(registerWithGoogleThunk.pending, (state) => {
+        // No cambiar loading para evitar que la página se ponga en blanco
+        state.error = null;
+      })
+      .addCase(registerWithGoogleThunk.fulfilled, (state, action: PayloadAction<AuthUser>) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(registerWithGoogleThunk.rejected, (state, action) => {
         state.error = action.payload as string;
       })
 
@@ -94,5 +148,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearAuthState } = authSlice.actions;
+export const { clearAuthState, clearAuthError } = authSlice.actions;
 export default authSlice.reducer;

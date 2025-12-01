@@ -8,9 +8,10 @@ import { Dashboard } from "../pages/dashboard";
 import { ProtectedRouter } from "./protectedRouter";
 
 export const AppRouter = () => {
-    const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth);
+    const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
 
-    if (loading) return null;
+    // Removido: if (loading) return null; 
+    // Esto causaba que la página se pusiera en blanco durante cualquier proceso de autenticación
 
     return (
         <Routes>
