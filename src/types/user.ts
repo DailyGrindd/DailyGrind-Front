@@ -17,6 +17,7 @@ export interface RegisterRequest {
 
 // Estructura del usuario en respuesta exitosa
 export interface AuthUser {
+    _id?: string;
     email: string;
     role: string;
     name?: string;

@@ -6,6 +6,7 @@ import { Register } from "../pages/register";
 import { Home } from "../pages/home";
 import { Dashboard } from "../pages/dashboard";
 import { Users } from "../pages/users";
+import { Challenges } from "../pages/challenges";
 import { ProtectedRouter } from "./protectedRouter";
 import { Profile } from "../pages/profile";
 export const AppRouter = () => {
@@ -62,6 +63,15 @@ export const AppRouter = () => {
                 element={
                     <ProtectedRouter isAllowed={isAuthenticated && user?.role === "Administrador"} redirectTo="/login">
                         <Users />
+                    </ProtectedRouter>
+                }
+            />
+
+            <Route
+                path="/challenges"
+                element={
+                    <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
+                        <Challenges />
                     </ProtectedRouter>
                 }
             />

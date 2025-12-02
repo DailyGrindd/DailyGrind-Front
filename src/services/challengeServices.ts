@@ -1,0 +1,78 @@
+import { instanceAxios } from "../api/axios";
+import type { Challenge, CreateChallengeRequest, UpdateChallengeRequest } from "../types/challenge";
+
+// Obtener todos los desafíos con filtros opcionales
+export const getAllChallenges = async (filters?: {
+    type?: "global" | "personal";
+    category?: string;
+    difficulty?: number;
+    isActive?: boolean;
+}): Promise<Challenge[]> => {
+    const params = new URLSearchParams();
+    if (filters?.type) params.append("type", filters.type);
+    if (filters?.category) params.append("category", filters.category);
+    if (filters?.difficulty) params.append("difficulty", filters.difficulty.toString());
+    if (filters?.isActive !== undefined) params.append("isActive", filters.isActive.toString());
+
+    const response = await instanceAxios.get(`/challenges?${params.toString()}`);
+    return response.data;
+};
+
+// Obtener desafío por ID
+export const getChallengeById = async (id: string): Promise<Challenge> => {
+    const response = await instanceAxios.get(`/challenges/${id}`);
+    return response.data;
+};
+
+// Crear nuevo desafío personal
+export const createChallenge = async (data: CreateChallengeRequest): Promise<{ message: string; challenge: Challenge }> => {
+    const response = await instanceAxios.post("/challenges", data);
+    return response.data;
+};
+
+// Actualizar desafío
+export const updateChallenge = async (id: string, data: UpdateChallengeRequest): Promise<{ message: string; challenge: Challenge }> => {
+    const response = await instanceAxios.put(`/challenges/${id}`, data);
+    return response.data;
+};
+
+// Eliminar desafío
+export const deleteChallenge = async (id: string): Promise<{ message: string; challenge: Challenge }> => {
+    const response = await instanceAxios.delete(`/challenges/${id}`);
+    return response.data;
+};
+
+// Obtener desafíos por categoría
+export const getChallengesByCategory = async (category: string): Promise<Challenge[]> => {
+    const response = await instanceAxios.get(`/challenges/category/${category}`);
+    return response.data;
+};
+
+// Obtener desafíos random
+export const getRandomChallenges = async (count: number = 3, type?: string, userLevel?: number): Promise<Challenge[]> => {
+    const params = new URLSearchParams();
+    params.append("count", count.toString());
+    if (type) params.append("type", type);
+    if (userLevel) params.append("userLevel", userLevel.toString());
+
+    const response = await instanceAxios.get(`/challenges/random?${params.toString()}`);
+    return response.data;
+};
+
+// Incrementar contador de asignaciones
+export const incrementAssigned = async (id: string): Promise<{ message: string; challenge: Challenge }> => {
+    const response = await instanceAxios.patch(`/challenges/${id}/assign`);
+    return response.data;
+};
+
+// Marcar desafío como completado
+export const completeChallenge = async (id: string): Promise<{ message: string; challenge: Challenge }> => {
+    const response = await instanceAxios.patch(`/challenges/${id}/complete`);
+    return response.data;
+};
+
+// Obtener estadísticas de desafíos
+export const getChallengeStats = async (): Promise<any> => {
+    const response = await instanceAxios.get("/challenges/stats");
+    return response.data;
+};

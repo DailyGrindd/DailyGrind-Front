@@ -14,20 +14,21 @@ import { register, checkAvailability } from "../services/userServices";
 import { registerWithGoogleThunk } from "../store/authSlice";
 import type { RootState } from "../store/store";
 
-const AVATAR_OPTIONS = [
-    "https://api.dicebear.com/7.x/big-smile/svg?seed=Felix",
-    "https://api.dicebear.com/7.x/big-smile/svg?seed=Aneka",
-    "https://api.dicebear.com/7.x/big-smile/svg?seed=Luna",
-    "https://api.dicebear.com/7.x/big-smile/svg?seed=Max",
-    "https://api.dicebear.com/7.x/big-smile/svg?seed=Charlie",
-    "https://api.dicebear.com/7.x/big-smile/svg?seed=Milo",
-    "https://api.dicebear.com/7.x/big-smile/svg?seed=Bella",
-    "https://api.dicebear.com/7.x/big-smile/svg?seed=Oliver",
+const AVATAR_SEEDS = [
+    "Felix", "Aneka", "Luna", "Max", "Charlie", "Milo", "Bella", "Oliver",
+    "Leo", "Sophie", "Jack", "Zoe", "Oscar", "Emma", "Toby", "Lily",
+    "Rocky", "Daisy", "Duke", "Ruby", "Bear", "Sadie", "Zeus", "Chloe",
+    "Cooper", "Molly", "Tucker", "Maggie", "Buddy", "Lucy", "Bailey", "Stella",
+    "Bentley", "Penny", "Jake", "Abby", "Loki", "Coco", "Gizmo", "Nala",
+    "Shadow", "Princess", "Murphy", "Pepper", "Jasper", "Angel", "Teddy", "Rosie"
 ];
+
+const AVATAR_OPTIONS = AVATAR_SEEDS.map(seed => 
+    `https://api.dicebear.com/7.x/big-smile/svg?seed=${seed}`
+);
 
 export function Register() {
     const [loading, setLoading] = useState(false);
-    const [googleLoading, setGoogleLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
     const [selectedAvatar, setSelectedAvatar] = useState("");
     const [availabilityErrors, setAvailabilityErrors] = useState<{ email?: string; displayName?: string }>({});
@@ -62,8 +63,6 @@ export function Register() {
 
     useEffect(() => {
         if (authError && !hasShownError.current) {
-            setGoogleLoading(false);
-            
             // Ignorar si el usuario canceló el popup
             if (authError !== 'POPUP_CANCELLED') {
                 // Manejar error de usuario ya registrado
@@ -117,12 +116,10 @@ export function Register() {
                 zone: data.zone
             };
 
-            setGoogleLoading(true);
             try {
                 await dispatch(registerWithGoogleThunk(googleData));
             } finally {
                 setTimeout(() => {
-                    setGoogleLoading(false);
                     setLoading(false);
                 }, 500);
             }
@@ -220,8 +217,6 @@ export function Register() {
 
     const handleGoogleRegister = async () => {
         try {
-            setGoogleLoading(true);
-            
             // Si no viene desde login, abrir popup para obtener token
             if (!location.state?.fromGoogleLogin) {
                 const { signInWithPopup } = await import('firebase/auth');
@@ -252,8 +247,6 @@ export function Register() {
             
             console.error("Error iniciando registro con Google:", error);
             toast.error(error.message || "Error al iniciar registro con Google");
-        } finally {
-            setGoogleLoading(false);
         }
     };
 
@@ -546,22 +539,24 @@ export function Register() {
 
                                     <div className="space-y-2">
                                         <Label>Elige tu Avatar</Label>
-                                        <div className="grid grid-cols-4 gap-3">
-                                            {AVATAR_OPTIONS.map((avatar, index) => (
-                                                <button
-                                                    key={index}
-                                                    type="button"
-                                                    onClick={() => setSelectedAvatar(avatar)}
-                                                    className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
-                                                        selectedAvatar === avatar 
-                                                            ? 'border-primary bg-primary/10' 
-                                                            : 'border-border hover:border-primary/50'
-                                                    }`}
-                                                    disabled={loading}
-                                                >
-                                                    <img src={avatar} alt={`Avatar ${index + 1}`} className="w-full h-auto rounded-md" />
-                                                </button>
-                                            ))}
+                                        <div className="max-h-64 overflow-y-auto border border-border rounded-lg p-3 scrollbar-thin scrollbar-thumb-primary scrollbar-track-muted">
+                                            <div className="grid grid-cols-4 gap-3">
+                                                {AVATAR_OPTIONS.map((avatar, index) => (
+                                                    <button
+                                                        key={index}
+                                                        type="button"
+                                                        onClick={() => setSelectedAvatar(avatar)}
+                                                        className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
+                                                            selectedAvatar === avatar 
+                                                                ? 'border-primary bg-primary/10' 
+                                                                : 'border-border hover:border-primary/50'
+                                                        }`}
+                                                        disabled={loading}
+                                                    >
+                                                        <img src={avatar} alt={`Avatar ${index + 1}`} className="w-full h-auto rounded-md" />
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                         {!selectedAvatar && (
                                             <p className="text-sm text-muted-foreground">Selecciona un avatar para continuar</p>
