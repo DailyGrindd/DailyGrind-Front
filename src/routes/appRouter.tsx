@@ -7,7 +7,7 @@ import { Home } from "../pages/home";
 import { Dashboard } from "../pages/dashboard";
 import { Users } from "../pages/users";
 import { ProtectedRouter } from "./protectedRouter";
-
+import { Profile } from "../pages/profile";
 export const AppRouter = () => {
     const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
 
@@ -39,7 +39,15 @@ export const AppRouter = () => {
             />
 
             <Route path="/home" element={<Home />} />
-
+            {/* Nueva ruta de perfil */}
+            <Route
+                path="/profile"
+                element={
+                    <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
+                        <Profile />
+                    </ProtectedRouter>
+                }
+            />
             <Route
                 path="/dashboard"
                 element={
