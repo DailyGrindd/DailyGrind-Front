@@ -80,62 +80,103 @@ export function Header({ currentView }: HeaderProps) {
                         })}
                     </nav>
 
-                    {/* User Info + Logout */}
-                    <div className="flex items-center gap-3">
-                        <div className="hidden md:block text-right">
+                    {/* User Info + Logout - Desktop */}
+                    <div className="hidden md:flex items-center gap-3">
+                        {/* Avatar */}
+                        {user?.avatarUrl && (
+                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-active bg-white flex items-center justify-center p-0.5">
+                                <img 
+                                    src={user.avatarUrl} 
+                                    alt={user.displayName || "Avatar"} 
+                                    className="w-full h-full object-contain"
+                                />
+                            </div>
+                        )}
+                        
+                        {/* User Info */}
+                        <div className="text-right">
                             <p className="text-sm font-medium text-foreground">{user?.displayName}</p>
                             <p className="text-xs text-muted-foreground">{`Nivel ${user?.level} • ${user?.totalPoints} pts`}</p>
                         </div>
+                        
+                        {/* Logout Button */}
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleLogout}
-                            className="hidden md:flex gap-2"
+                            className="gap-2"
                         >
                             <LogOut className="h-4 w-4" />
                         </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="lg:hidden"
-                        >
-                            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                        </Button>
                     </div>
+
+                    {/* Mobile Menu Button */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="md:hidden"
+                    >
+                        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </Button>
                 </div>
             </header>
 
             {/* Mobile Navigation */}
             {mobileMenuOpen && (
-                <div className="lg:hidden bg-white border-b border-border">
-                    <nav className="container mx-auto px-4 py-3 space-y-2">
-                        {menuItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = currentView === item.id;
-                            return (
-                                <Button
-                                    key={item.id}
-                                    variant={isActive ? "default" : "ghost"}
-                                    className="w-full justify-start gap-2"
-                                    onClick={() => handleNavigate(item)}
-                                >
-                                    <Icon className="h-4 w-4" />
-                                    {item.label}
-                                </Button>
-                            );
-                        })}
-                        <div className="pt-2 border-t mt-2">
-                            <Button
-                                variant="ghost"
-                                className="w-full justify-start gap-2"
-                                onClick={handleLogout}
-                            >
-                                <LogOut className="h-4 w-4" />
-                                Cerrar Sesión
-                            </Button>
+                <div className="md:hidden bg-white border-b border-border">
+                    <div className="container mx-auto px-4 py-3">
+                        {/* User Info Mobile */}
+                        <div className="flex items-center gap-3 pb-3 mb-3 border-b">
+                            {/* Avatar */}
+                            {user?.avatarUrl && (
+                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-active bg-white flex items-center justify-center p-1">
+                                    <img 
+                                        src={user.avatarUrl} 
+                                        alt={user.displayName || "Avatar"} 
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                            )}
+                            
+                            {/* User Info */}
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-foreground">{user?.displayName}</p>
+                                <p className="text-xs text-muted-foreground">{`Nivel ${user?.level} • ${user?.totalPoints} pts`}</p>
+                            </div>
                         </div>
-                    </nav>
+
+                        {/* Navigation Links */}
+                        <nav className="space-y-2">
+                            {menuItems.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = currentView === item.id;
+                                return (
+                                    <Button
+                                        key={item.id}
+                                        variant={isActive ? "default" : "ghost"}
+                                        className="w-full justify-start gap-2"
+                                        onClick={() => handleNavigate(item)}
+                                    >
+                                        <Icon className="h-4 w-4" />
+                                        {item.label}
+                                    </Button>
+                                );
+                            })}
+                            
+                            {/* Logout Button */}
+                            <div className="pt-2 border-t">
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start gap-2"
+                                    onClick={handleLogout}
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                    Cerrar Sesión
+                                </Button>
+                            </div>
+                        </nav>
+                    </div>
                 </div>
             )}
         </>

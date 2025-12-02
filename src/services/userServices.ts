@@ -1,7 +1,34 @@
-import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, FirebaseRegisterRequest, FirebaseAuthResponse } from "../types/user";
+import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, FirebaseRegisterRequest, FirebaseAuthResponse, GetUserResponse, GetUsersResponse } from "../types/user";
 import { instanceAxios } from "../api/axios";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../config/firebase";
+
+export const obtenerUsuarios = async (role?: string): Promise<GetUsersResponse[]> => {
+    try {
+        const { data } = await instanceAxios.get<GetUsersResponse[]>(`/users`, {
+            params: { role }
+        });
+        return data;
+    } catch (error: any) {
+        throw new Error(
+            error.response?.data?.message || "Error al obtener usuarios"
+        );
+    }
+};
+
+export const obtenerUsuario = async (email: string): Promise<GetUserResponse> => {
+    try {
+        const { data } = await instanceAxios.get<GetUserResponse>(`/users/${email}`);
+        return data;
+    } catch (error: any) {
+        console.error("Service error:", error.response || error); // Debug
+        throw new Error(
+            error.response?.data?.message || 
+            error.response?.data?.error ||
+            "Error al obtener el usuario"
+        );
+    }
+};
 
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
     try {
@@ -29,10 +56,10 @@ export const register = async (userData: RegisterRequest): Promise<RegisterRespo
     }
 };
 
-export const checkAvailability = async (email: string, userName: string) => {
+export const checkAvailability = async (email: string, displayName: string) => {
     try {
         const { data } = await instanceAxios.get("/users/check-availability", {
-            params: { email, userName }
+            params: { email, displayName }
         });
         return data;
     } catch (error: any) {
@@ -64,7 +91,8 @@ export const checkSession = async () => {
       name: data.name,
       level: data.level,
       displayName: data.displayName,
-      totalPoints: data.totalPoints
+      totalPoints: data.totalPoints,
+      avatarUrl: data.avatarUrl
     };
 
   } catch (error: any) {
@@ -117,6 +145,7 @@ export const loginWithGoogle = async (): Promise<LoginResponse> => {
             if (currentUser) {
                 const idToken = await currentUser.getIdToken();
                 sessionStorage.setItem('firebase_temp_token', idToken);
+                throw new Error('USER_NOT_FOUND_GOOGLE');
             }
         }
         

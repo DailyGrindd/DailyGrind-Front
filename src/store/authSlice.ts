@@ -104,7 +104,6 @@ const authSlice = createSlice({
 
       // login with Google
       .addCase(loginWithGoogleThunk.pending, (state) => {
-        // No cambiar loading para evitar que la página se ponga en blanco
         state.error = null;
       })
       .addCase(loginWithGoogleThunk.fulfilled, (state, action: PayloadAction<AuthUser>) => {
@@ -117,7 +116,6 @@ const authSlice = createSlice({
 
       // register with Google
       .addCase(registerWithGoogleThunk.pending, (state) => {
-        // No cambiar loading para evitar que la página se ponga en blanco
         state.error = null;
       })
       .addCase(registerWithGoogleThunk.fulfilled, (state, action: PayloadAction<AuthUser>) => {

@@ -5,6 +5,7 @@ import { Login } from "../pages/login";
 import { Register } from "../pages/register";
 import { Home } from "../pages/home";
 import { Dashboard } from "../pages/dashboard";
+import { Users } from "../pages/users";
 import { ProtectedRouter } from "./protectedRouter";
 
 export const AppRouter = () => {
@@ -42,8 +43,17 @@ export const AppRouter = () => {
             <Route
                 path="/dashboard"
                 element={
-                    <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
+                    <ProtectedRouter isAllowed={isAuthenticated && user?.role === "Administrador"} redirectTo="/login">
                         <Dashboard />
+                    </ProtectedRouter>
+                }
+            />
+
+            <Route
+                path="/users"
+                element={
+                    <ProtectedRouter isAllowed={isAuthenticated && user?.role === "Administrador"} redirectTo="/login">
+                        <Users />
                     </ProtectedRouter>
                 }
             />

@@ -24,6 +24,45 @@ export interface AuthUser {
     level: number;
     displayName?: string;
     totalPoints?: number;
+    avatarUrl?: string;
+}
+
+// Response get user
+export interface GetUserResponse {
+    _id: string;
+    userName: string;
+    email: string;
+    password: string;
+    role: string;
+    level: number;
+    lastActive: string;
+
+    // Profile 
+    profile: {
+        displayName: string;
+        avatarUrl?: string;
+        isPublic: boolean;
+        zone: string;
+    };
+
+    // Stats 
+    stats: {
+        totalPoints: number;
+        weeklyPoints: number;
+        totalCompleted: number;
+        currentStreak: number;
+    };
+}
+
+// Response get users
+export interface GetUsersResponse {
+    id: string;
+    userName: string;
+    email: string;
+    password: string;
+    role: string;
+    level: number;
+    lastActive: string;
 }
 
 // Response login

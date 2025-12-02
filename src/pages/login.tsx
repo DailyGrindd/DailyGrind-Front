@@ -37,26 +37,33 @@ export function Login() {
             
             // Ignorar si el usuario canceló el popup
             if (error === 'POPUP_CANCELLED') {
-                hasShownError.current = true;
-                // Limpiar el error después de un momento para permitir reintento
-                setTimeout(() => {
-                    dispatch(clearAuthError());
-                    hasShownError.current = false;
-                }, 100);
+                dispatch(clearAuthError());
+                hasShownError.current = false;
                 return;
             }
             
-            // Si el error es que el usuario no existe, redirigir al registro sin mostrar toast
-            if (error.includes("Usuario no encontrado") || error.includes("Debes registrarte")) {
+            // Si el error es que el usuario de Google no existe, redirigir al registro
+            if (error === 'USER_NOT_FOUND_GOOGLE') {
                 navigate("/register", { state: { fromGoogleLogin: true } });
-            } else {
-                toast.error(error);
+                dispatch(clearAuthError());
+                hasShownError.current = false;
+                return;
             }
+            
+            // Para cualquier otro error, mostrar toast
+            toast.error(error);
             hasShownError.current = true;
+            
+            // Resetear el flag después de un tiempo
+            setTimeout(() => {
+                dispatch(clearAuthError());
+                hasShownError.current = false;
+            }, 3000);
         }
     }, [error, navigate, dispatch]);
 
     const onSubmit = (data: LoginRequest) => {
+        hasShownError.current = false;
         dispatch(loginThunk(data));
     };
 
@@ -66,7 +73,6 @@ export function Login() {
         try {
             await dispatch(loginWithGoogleThunk());
         } finally {
-            // Siempre resetear el loading después de que termine
             setTimeout(() => setGoogleLoading(false), 500);
         }
     };
@@ -158,12 +164,12 @@ export function Login() {
                         </form>
 
                         {/* Divider */}
-                        <div className="relative my-6">
+                        <div className="relative my-4">
                             <div className="absolute inset-0 flex items-center">
                                 <div className="w-full border-t border-border"></div>
                             </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-card px-2 text-muted-foreground">O continúa con</span>
+                            <div className="relative flex justify-center">
+                                <span className="bg-card px-2 text-sm text-muted-foreground">O continúa con</span>
                             </div>
                         </div>
 
@@ -204,7 +210,7 @@ export function Login() {
                         </div>
 
                         {/* Register Link */}
-                        <p className="text-center text-sm text-muted-foreground">
+                        <p className="text-center text-sm text-muted-foreground mt-9">
                             ¿No tienes cuenta?{" "}
                             <button 
                                 type="button"
