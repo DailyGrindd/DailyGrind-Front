@@ -11,6 +11,7 @@ import { Button } from "../components/button";
 import { Select } from "../components/select";
 import type { RootState } from "../store/store";
 import { checkSessionThunk } from "../store/authSlice";
+import { Input } from "../components/input";
 
 interface UserProfile {
   user: {
@@ -313,11 +314,10 @@ export function Profile() {
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Nombre de perfil
                 </label>
-                <input
+                <Input
                   type="text"
                   value={editForm.displayName}
                   onChange={(e) => setEditForm({ ...editForm, displayName: e. target.value })}
-                  className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                   placeholder="Tu nombre de perfil"
                   required
                   minLength={2}

@@ -15,6 +15,23 @@ export interface RegisterRequest {
     avatarUrl?: string;
 }
 
+// Resquest upload
+export interface UploadUserRequest {
+    userName?: string;
+    email?: string;
+    password?: string;
+    displayName?: string;
+    zone?: string;
+    isPublic?: boolean;
+    role?: string;
+    level?: number;
+}
+
+export interface UploadUserResponse {
+    message: string;
+    user: GetUserResponse;
+}
+
 // Estructura del usuario en respuesta exitosa
 export interface AuthUser {
     _id?: string;
@@ -37,6 +54,7 @@ export interface GetUserResponse {
     role: string;
     level: number;
     lastActive: string;
+    isActive: boolean;
 
     // Profile 
     profile: {
@@ -64,6 +82,7 @@ export interface GetUsersResponse {
     role: string;
     level: number;
     lastActive: string;
+    isActive: boolean;
 }
 
 // Response login
