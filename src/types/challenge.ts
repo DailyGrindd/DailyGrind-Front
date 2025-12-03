@@ -7,6 +7,7 @@ export interface Challenge {
         profile?: {
             displayName: string;
             avatarUrl?: string;
+            isPublic?: boolean;
         };
     };
     title: string;
