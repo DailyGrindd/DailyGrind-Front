@@ -108,7 +108,8 @@ export function Daily() {
         try {
             setLoading(true);
             const response = await rerollGlobalMission(slot);
-            setDailyQuest(response.dailyQuest);
+            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
+            await loadDailyQuest();
             toast.success(`Misión renovada. Te quedan ${response.rerollsRemaining} rerolls`);
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al hacer reroll");
@@ -121,7 +122,8 @@ export function Daily() {
         try {
             setLoading(true);
             const response = await completeMission(slot);
-            setDailyQuest(response.dailyQuest);
+            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
+            await loadDailyQuest();
             toast.success(`¡Misión completada! +${response.pointsEarned} puntos 🎉`);
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al completar misión");
@@ -133,8 +135,9 @@ export function Daily() {
     const handleSkip = async (slot: number) => {
         try {
             setLoading(true);
-            const response = await skipMission(slot);
-            setDailyQuest(response.dailyQuest);
+            await skipMission(slot);
+            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
+            await loadDailyQuest();
             toast.info("Misión skipeada");
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al skipear misión");
@@ -203,16 +206,17 @@ export function Daily() {
             
             // Si no hay DailyQuest, inicializar primero
             if (!dailyQuest) {
-                const initResponse = await initializeDailyQuest();
-                setDailyQuest(initResponse.dailyQuest);
+                await initializeDailyQuest();
                 toast.info("Inicializando misiones del día...");
             }
             
-            const response = await assignPersonalChallenge({
+            await assignPersonalChallenge({
                 challengeId,
                 slot: selectedSlot
             });
-            setDailyQuest(response.dailyQuest);
+            
+            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
+            await loadDailyQuest();
             setShowAssignModal(false);
             setSelectedSlot(null);
             toast.success("¡Desafío asignado correctamente!");
@@ -222,15 +226,16 @@ export function Daily() {
             // Si el error es porque debe inicializar primero, hacerlo automáticamente
             if (errorMessage.includes("inicializar") || errorMessage.includes("DailyQuest")) {
                 try {
-                    const initResponse = await initializeDailyQuest();
-                    setDailyQuest(initResponse.dailyQuest);
+                    await initializeDailyQuest();
                     
                     // Reintentar asignación
-                    const response = await assignPersonalChallenge({
+                    await assignPersonalChallenge({
                         challengeId,
                         slot: selectedSlot
                     });
-                    setDailyQuest(response.dailyQuest);
+                    
+                    // Recargar el DailyQuest completo
+                    await loadDailyQuest();
                     setShowAssignModal(false);
                     setSelectedSlot(null);
                     toast.success("¡Desafío asignado correctamente!");
@@ -248,8 +253,9 @@ export function Daily() {
     const handleUnassign = async (slot: number) => {
         try {
             setLoading(true);
-            const response = await unassignPersonalChallenge(slot);
-            setDailyQuest(response.dailyQuest);
+            await unassignPersonalChallenge(slot);
+            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
+            await loadDailyQuest();
             toast.success("Desafío desasignado");
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al desasignar");
