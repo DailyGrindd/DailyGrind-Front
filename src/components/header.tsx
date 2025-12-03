@@ -79,7 +79,6 @@ export function Header({ currentView }: HeaderProps) {
         ]
         : [
             { id: "home", label: "Inicio", icon: CalendarCheck, path: "/home" },
-            { id: "profile", label: "Mi Perfil", icon: CircleUserRound, path: "/profile" },
             { id: "challenges", label: "Desafíos", icon: Zap, path: "/challenges" },
             { id: "ranking", label: "Ranking", icon: TrendingUp, path: "/ranking" },
         ];
@@ -183,21 +182,27 @@ export function Header({ currentView }: HeaderProps) {
                     )}
                     {/* User Info + Logout - Desktop */}
                     <div className="hidden md:flex items-center gap-3">
-                        {/* Avatar */}
-                        {user?.avatarUrl && (
-                            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-active bg-white flex items-center justify-center p-0.5">
-                                <img 
-                                    src={user.avatarUrl} 
-                                    alt={user.displayName || "Avatar"} 
-                                    className="w-full h-full object-contain"
-                                />
+                        {/* Avatar + User Info - Clickeable */}
+                        <div 
+                            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => navigate("/profile")}
+                        >
+                            {/* Avatar */}
+                            {user?.avatarUrl && (
+                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-active bg-white flex items-center justify-center p-0.5">
+                                    <img 
+                                        src={user.avatarUrl} 
+                                        alt={user.displayName || "Avatar"} 
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                            )}
+                            
+                            {/* User Info */}
+                            <div className="text-right">
+                                <p className="text-sm font-medium text-foreground">{user?.displayName}</p>
+                                <p className="text-xs text-muted-foreground">{`Nivel ${user?.level} • ${user?.totalPoints} pts`}</p>
                             </div>
-                        )}
-                        
-                        {/* User Info */}
-                        <div className="text-right">
-                            <p className="text-sm font-medium text-foreground">{user?.displayName}</p>
-                            <p className="text-xs text-muted-foreground">{`Nivel ${user?.level} • ${user?.totalPoints} pts`}</p>
                         </div>
                         
                         {/* Logout Button */}
@@ -227,8 +232,14 @@ export function Header({ currentView }: HeaderProps) {
             {mobileMenuOpen && (
                 <div className="md:hidden bg-white border-b border-border">
                     <div className="container mx-auto px-4 py-3">
-                        {/* User Info Mobile */}
-                        <div className="flex items-center gap-3 pb-3 mb-3 border-b">
+                        {/* User Info Mobile - Clickeable */}
+                        <div 
+                            className="flex items-center gap-3 pb-3 mb-3 border-b cursor-pointer hover:bg-gray-50 rounded-lg p-2 -m-2 transition-colors"
+                            onClick={() => {
+                                navigate("/profile");
+                                setMobileMenuOpen(false);
+                            }}
+                        >
                             {/* Avatar */}
                             {user?.avatarUrl && (
                                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-active bg-white flex items-center justify-center p-1">

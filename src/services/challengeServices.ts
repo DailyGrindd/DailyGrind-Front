@@ -36,9 +36,15 @@ export const updateChallenge = async (id: string, data: UpdateChallengeRequest):
     return response.data;
 };
 
-// Eliminar desafío
+// Desactivar desafío (solo owner o admin)
 export const deleteChallenge = async (id: string): Promise<{ message: string; challenge: Challenge }> => {
     const response = await instanceAxios.delete(`/challenges/${id}`);
+    return response.data;
+};
+
+// Reactivar desafío (solo owner o admin)
+export const reactivateChallenge = async (id: string): Promise<{ message: string; challenge: Challenge }> => {
+    const response = await instanceAxios.patch(`/challenges/${id}/reactivate`);
     return response.data;
 };
 

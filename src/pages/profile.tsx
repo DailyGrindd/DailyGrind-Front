@@ -6,12 +6,79 @@ import {
   User, Trophy, Target, Flame, Share2, Settings, Award, 
   BarChart3, Medal, Calendar, X, Check, Globe, Lock, Loader2 
 } from "lucide-react";
-import { Button } from "../components/button";
+import { Button } from "../components/button";  
 import { Select } from "../components/select";
 import type { RootState } from "../store/store";
 import { checkSessionThunk } from "../store/authSlice";
-import type { UserProfile, EditProfileForm } from "../types/profile";
-import { getMyProfile, updateProfile } from "../services/profileService";
+import { Input } from "../components/input";
+
+interface UserProfile {
+  user: {
+    id: string;
+    userName: string;
+    email: string;
+    role: string;
+    level: number;
+    profile: {
+      displayName: string;
+      avatarUrl?: string;
+      isPublic: boolean;
+      zone: string;
+    };
+    stats: {
+      totalPoints: number;
+      weeklyPoints: number;
+      totalCompleted: number;
+      currentStreak: number;
+    };
+    lastActive: string;
+    createdAt?: string;
+  };
+  badges: Array<{
+    badge: {
+      _id: string;
+      name: string;
+      description: string;
+      iconUrl: string;
+      difficulty: number;
+    };
+    earnedAt: string;
+  }>;
+  dailyProgress: {
+    date: string;
+    missions: Array<{
+      slot: number;
+      challengeId: any;
+      type: string;
+      status: string;
+      completedAt?: string;
+      pointsAwarded: number;
+    }>;
+    summary: {
+      total: number;
+      completed: number;
+      pending: number;
+      skipped: number;
+    };
+    rerollsUsed: number;
+    canReroll: boolean;
+  };
+  recentActivity: {
+    last30Days: {
+      totalCompleted: number;
+      globalCompleted: number;
+      personalCompleted: number;
+      totalPointsEarned: number;
+    };
+  };
+}
+
+interface EditProfileForm {
+  displayName: string;
+  avatarUrl: string;
+  zone: string;
+  isPublic: boolean;
+}
 
 type TabType = "badges" | "achievements" | "statistics";
 
@@ -231,11 +298,10 @@ export function Profile() {
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Nombre de perfil
                 </label>
-                <input
+                <Input
                   type="text"
                   value={editForm.displayName}
                   onChange={(e) => setEditForm({ ...editForm, displayName: e. target.value })}
-                  className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                   placeholder="Tu nombre de perfil"
                   required
                   minLength={2}

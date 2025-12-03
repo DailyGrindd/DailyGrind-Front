@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trophy, Flame, Target, Edit2, Trash2, X, Users, TrendingUp, Calendar } from "lucide-react";
+import { Plus, Trophy, Flame, Target, Edit2, Trash2, X, Users, TrendingUp, Calendar, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
@@ -13,7 +13,8 @@ import {
     getAllChallenges,
     createChallenge,
     updateChallenge,
-    deleteChallenge
+    deleteChallenge,
+    reactivateChallenge
 } from "../services/challengeServices";
 import type { Challenge, CreateChallengeRequest, ChallengeCategory } from "../types/challenge";
 import { CHALLENGE_CATEGORIES, getDifficultyLabel, getDifficultyPoints } from "../types/challenge";
@@ -27,6 +28,9 @@ export function Challenges() {
     const [filterCategory, setFilterCategory] = useState<string>("");
     const [filterDifficulty, setFilterDifficulty] = useState<string>("");
     const [viewMode, setViewMode] = useState<"my" | "community">("my");
+    const [showInactive, setShowInactive] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [challengeToDelete, setChallengeToDelete] = useState<string | null>(null);
     
     const { user } = useSelector((state: RootState) => state.auth);
 
@@ -44,12 +48,21 @@ export function Challenges() {
 
     useEffect(() => {
         loadChallenges();
-    }, [filterCategory, filterDifficulty, viewMode]);
+    }, [filterCategory, filterDifficulty, viewMode, showInactive]);
 
     const loadChallenges = async () => {
         try {
             setLoading(true);
-            const filters: any = { type: "personal", isActive: true };
+            const filters: any = { type: "personal" };
+            
+            // Filtrar por activo/inactivo según el toggle
+            if (viewMode === "my") {
+                filters.isActive = !showInactive;
+            } else {
+                // En comunidad siempre mostrar solo activos
+                filters.isActive = true;
+            }
+            
             if (filterCategory) filters.category = filterCategory;
             if (filterDifficulty) filters.difficulty = Number(filterDifficulty);
             
@@ -129,16 +142,41 @@ export function Challenges() {
         setShowCreateModal(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm("¿Estás seguro de eliminar este desafío?")) return;
+    const handleDeleteClick = (id: string) => {
+        setChallengeToDelete(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!challengeToDelete) return;
         
         try {
             setLoading(true);
-            await deleteChallenge(id);
-            toast.success("Desafío eliminado exitosamente");
+            await deleteChallenge(challengeToDelete);
+            toast.success("Desafío desactivado exitosamente");
+            setShowDeleteConfirm(false);
+            setChallengeToDelete(null);
             loadChallenges();
         } catch (error: any) {
-            toast.error(error.message || "Error al eliminar desafío");
+            toast.error(error.message || "Error al desactivar desafío");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setShowDeleteConfirm(false);
+        setChallengeToDelete(null);
+    };
+
+    const handleReactivate = async (id: string) => {
+        try {
+            setLoading(true);
+            await reactivateChallenge(id);
+            toast.success("Desafío reactivado exitosamente");
+            loadChallenges();
+        } catch (error: any) {
+            toast.error(error.message || "Error al reactivar desafío");
         } finally {
             setLoading(false);
         }
@@ -260,6 +298,20 @@ export function Challenges() {
                                 </Select>
                             </div>
                         </div>
+                        {viewMode === "my" && (
+                            <div className="mt-4 flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="showInactive"
+                                    checked={showInactive}
+                                    onChange={(e) => setShowInactive(e.target.checked)}
+                                    className="w-4 h-4 rounded border-gray-300"
+                                />
+                                <Label htmlFor="showInactive" className="cursor-pointer">
+                                    Mostrar desafíos inactivos
+                                </Label>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -309,26 +361,45 @@ export function Challenges() {
                                         {((typeof challenge.ownerUser === 'object' && challenge.ownerUser?._id === user?._id) || 
                                           (typeof challenge.ownerUser === 'string' && challenge.ownerUser === user?._id)) && (
                                             <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleEdit(challenge)}
-                                                >
-                                                    <Edit2 className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(challenge._id)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
+                                                {challenge.isActive ? (
+                                                    <>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleEdit(challenge)}
+                                                        >
+                                                            <Edit2 className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteClick(challenge._id)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4 text-red-500" />
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleReactivate(challenge._id)}
+                                                        className="text-green-500"
+                                                    >
+                                                        <RefreshCw className="h-4 w-4" />
+                                                    </Button>
+                                                )}
                                             </div>
                                         )}
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     <p className="text-sm text-muted-foreground">{challenge.description}</p>
+                                    
+                                    {!challenge.isActive && (
+                                        <div className="bg-gray-500/20 border border-gray-500 rounded px-2 py-1 text-xs text-gray-500 font-semibold w-fit">
+                                            Inactivo
+                                        </div>
+                                    )}
                                     
                                     <div className="flex items-center justify-between pt-2">
                                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(challenge.difficulty)}`}>
@@ -357,23 +428,32 @@ export function Challenges() {
 
                 {/* Modal Detalle del Desafío */}
                 {selectedChallenge && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                        <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-3xl">{getCategoryIcon(selectedChallenge.category)}</span>
-                                        <div>
-                                            <CardTitle className="text-2xl">{selectedChallenge.title}</CardTitle>
-                                            <CardDescription>{selectedChallenge.category}</CardDescription>
-                                        </div>
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+                        {/* Overlay */}
+                        <div 
+                            className="fixed inset-0 bg-black/50 z-[9998]"
+                            onClick={() => setSelectedChallenge(null)}
+                        />
+                        
+                        {/* Modal */}
+                        <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-xl max-h-[90vh] overflow-y-auto z-[9999]">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-3xl">{getCategoryIcon(selectedChallenge.category)}</span>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-foreground">{selectedChallenge.title}</h2>
+                                        <p className="text-sm text-muted-foreground">{selectedChallenge.category}</p>
                                     </div>
-                                    <Button variant="ghost" size="sm" onClick={() => setSelectedChallenge(null)}>
-                                        <X className="h-5 w-5" />
-                                    </Button>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
+                                <button
+                                    onClick={() => setSelectedChallenge(null)}
+                                    className="p-2 hover:bg-background rounded-lg transition"
+                                >
+                                    <X className="w-5 h-5 text-muted-foreground" />
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-6">
                                 {/* Descripción */}
                                 <div>
                                     <h3 className="text-sm font-semibold text-muted-foreground mb-2">Descripción</h3>
@@ -421,8 +501,8 @@ export function Challenges() {
 
                                 {/* Creador */}
                                 <div>
-                                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Creado por</h3>
-                                    <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                                    <h3 className="text-sm font-semibold text-gray-600 mb-2">Creado por</h3>
+                                    <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50">
                                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                                             <span className="text-primary font-bold">
                                                 {typeof selectedChallenge.ownerUser === 'object' 
@@ -487,8 +567,8 @@ export function Challenges() {
                                         </div>
                                     </div>
                                 )}
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -573,6 +653,45 @@ export function Challenges() {
                                         </Button>
                                     </div>
                                 </form>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+                {/* Modal de confirmación para desactivar */}
+                {showDeleteConfirm && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                        <Card className="w-full max-w-md">
+                            <CardHeader>
+                                <CardTitle className="text-xl flex items-center gap-2">
+                                    <Trash2 className="h-5 w-5 text-red-500" />
+                                    Desactivar Desafío
+                                </CardTitle>
+                                <CardDescription>
+                                    ¿Estás seguro de que deseas desactivar este desafío?
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                    El desafío no será eliminado, solo se desactivará. Podrás reactivarlo más tarde si lo deseas.
+                                </p>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleDeleteCancel}
+                                        className="flex-1"
+                                        disabled={loading}
+                                    >
+                                        Cancelar
+                                    </Button>
+                                    <Button
+                                        onClick={handleDeleteConfirm}
+                                        className="flex-1 bg-red-500 hover:bg-red-600"
+                                        disabled={loading}
+                                    >
+                                        {loading ? "Desactivando..." : "Desactivar"}
+                                    </Button>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
