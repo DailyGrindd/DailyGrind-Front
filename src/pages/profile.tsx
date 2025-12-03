@@ -6,8 +6,7 @@ import {
   User, Trophy, Target, Flame, Share2, Settings, Award, 
   BarChart3, Medal, Calendar, X, Check, Globe, Lock, Loader2 
 } from "lucide-react";
-import { instanceAxios } from "../api/axios";
-import { Button } from "../components/button";
+import { Button } from "../components/button";  
 import { Select } from "../components/select";
 import type { RootState } from "../store/store";
 import { checkSessionThunk } from "../store/authSlice";
@@ -117,18 +116,10 @@ export function Profile() {
       navigate("/login");
       return;
     }
-
     try {
       setLoading(true);
-      const response = await instanceAxios.get(`/profile/${userEmail}`);
-      setProfile(response.data);
-      // Inicializar el formulario de edición con los datos actuales
-      setEditForm({
-        displayName: response.data.user.profile.displayName || "",
-        avatarUrl: response.data.user.profile. avatarUrl || "",
-        zone: response.data.user. profile.zone || "",
-        isPublic: response.data. user.profile.isPublic ??  true
-      });
+      const profileData = await getMyProfile(userEmail);
+      setProfile(profileData);
     } catch (err: any) {
       setError(err.response?.data?.error || "Error al cargar el perfil");
       if (err.response?. status === 401) {
@@ -142,30 +133,19 @@ export function Profile() {
   // Función para compartir perfil
   const handleShareProfile = async () => {
     if (!profile) return;
-    
-    // Si el perfil es privado, mostrar alerta
-    if (! profile.user.profile.isPublic) {
-      alert("Tu perfil es privado. Cambialo a público para poder compartirlo.");
+    if (!profile.user.profile.isPublic) {
+      alert("Tu perfil es privado. Cámbialo a público para poder compartirlo.");
       return;
     }
-    
     const profileUrl = `${window.location.origin}/profile/public/${profile.user.id}`;
-    
     try {
       await navigator.clipboard.writeText(profileUrl);
-      setShowCopiedToast(true);
-      setTimeout(() => setShowCopiedToast(false), 3000);
     } catch (err) {
-      // Fallback para navegadores que no soportan clipboard API
-      const textArea = document.createElement("textarea");
-      textArea.value = profileUrl;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document. execCommand("copy");
-      document.body.removeChild(textArea);
-      setShowCopiedToast(true);
-      setTimeout(() => setShowCopiedToast(false), 3000);
+      alert("No se pudo copiar el enlace");
+      return;
     }
+    setShowCopiedToast(true);
+    setTimeout(() => setShowCopiedToast(false), 3000);
   };
 
   // Función para abrir el modal de edición
@@ -188,9 +168,13 @@ export function Profile() {
     setEditLoading(true);
     setEditError(null);
 
+    if (!userEmail) {
+      setEditError("Email de usuario no disponible");
+      setEditLoading(false);
+      return;
+    }
     try {
-      await instanceAxios.put(`/profile/${userEmail}`, editForm);
-      
+      await updateProfile(userEmail, editForm);
       // Actualizar el estado local
       if (profile) {
         setProfile({
