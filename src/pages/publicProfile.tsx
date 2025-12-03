@@ -95,6 +95,14 @@ export function PublicProfile() {
   if (!profile) return null;
 
   const { user, badges, recentActivity } = profile;
+  
+  // Valores por defecto si recentActivity no está disponible
+  const activityData = recentActivity?.last30Days || {
+    totalCompleted: 0,
+    globalCompleted: 0,
+    personalCompleted: 0,
+    totalPointsEarned: 0
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-label">
@@ -251,7 +259,7 @@ export function PublicProfile() {
                   <div className="bg-background rounded-xl p-6 border border-border">
                     <div className="flex items-center gap-3 mb-2">
                       <Target className="w-8 h-8 text-accent" />
-                      <span className="text-2xl font-bold text-foreground">{recentActivity.last30Days.totalCompleted}</span>
+                      <span className="text-2xl font-bold text-foreground">{activityData.totalCompleted}</span>
                     </div>
                     <p className="text-muted-foreground text-sm">Desafíos completados</p>
                   </div>
@@ -259,7 +267,7 @@ export function PublicProfile() {
                   <div className="bg-background rounded-xl p-6 border border-border">
                     <div className="flex items-center gap-3 mb-2">
                       <Trophy className="w-8 h-8 text-yellow-500" />
-                      <span className="text-2xl font-bold text-foreground">{recentActivity.last30Days.totalPointsEarned}</span>
+                      <span className="text-2xl font-bold text-foreground">{activityData.totalPointsEarned}</span>
                     </div>
                     <p className="text-muted-foreground text-sm">Puntos ganados</p>
                   </div>
@@ -267,7 +275,7 @@ export function PublicProfile() {
                   <div className="bg-background rounded-xl p-6 border border-border">
                     <div className="flex items-center gap-3 mb-2">
                       <Medal className="w-8 h-8 text-orange-500" />
-                      <span className="text-2xl font-bold text-foreground">{recentActivity.last30Days.globalCompleted}</span>
+                      <span className="text-2xl font-bold text-foreground">{activityData.globalCompleted}</span>
                     </div>
                     <p className="text-muted-foreground text-sm">Desafíos globales</p>
                   </div>
@@ -275,7 +283,7 @@ export function PublicProfile() {
                   <div className="bg-background rounded-xl p-6 border border-border">
                     <div className="flex items-center gap-3 mb-2">
                       <User className="w-8 h-8 text-primary" />
-                      <span className="text-2xl font-bold text-foreground">{recentActivity.last30Days.personalCompleted}</span>
+                      <span className="text-2xl font-bold text-foreground">{activityData.personalCompleted}</span>
                     </div>
                     <p className="text-muted-foreground text-sm">Desafíos personales</p>
                   </div>
