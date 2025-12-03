@@ -1,4 +1,4 @@
-import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, FirebaseRegisterRequest, FirebaseAuthResponse, GetUserResponse, GetUsersResponse } from "../types/user";
+import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, FirebaseRegisterRequest, FirebaseAuthResponse, GetUserResponse, GetUsersResponse, UploadUserRequest, UploadUserResponse } from "../types/user";
 import { instanceAxios } from "../api/axios";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../config/firebase";
@@ -30,6 +30,32 @@ export const obtenerUsuario = async (email: string): Promise<GetUserResponse> =>
     }
 };
 
+export const darDeBajaUsuario = async (email: string): Promise<{ message: string }> => {
+    try {
+        const { data } = await instanceAxios.put<{ message: string }>(`/users/${email}/desactivate`);
+        return data;
+    } catch (error: any) {
+        throw new Error(
+            error.response?.data?.message || 
+            error.response?.data?.error ||
+            "Error al dar de baja el usuario"
+        );
+    }
+}
+
+export const darDeAltaUsuario = async (email: string): Promise<{ message: string }> => {
+    try {
+        const { data } = await instanceAxios.put<{ message: string }>(`/users/${email}/activate`);
+        return data;
+    } catch (error: any) {
+        throw new Error(
+            error.response?.data?.message || 
+            error.response?.data?.error ||
+            "Error al dar de baja el usuario"
+        );
+    }
+}
+
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
     try {
         const { data } = await instanceAxios.post<LoginResponse>("/users/login", credentials);
@@ -55,6 +81,48 @@ export const register = async (userData: RegisterRequest): Promise<RegisterRespo
         throw new Error(message);
     }
 };
+
+export const uploadUser = async (email: string, userData: UploadUserRequest): Promise<UploadUserResponse> => {
+    try {
+        const { data } = await instanceAxios.put<UploadUserResponse>(`/users/${email}`, userData);
+        return data;
+    } catch (error: any) {
+        console.error("Error en uploadUser:", error.response || error);
+        
+        // Si hay errores de validación DTO class-validator
+        if (error.response?.data && Array.isArray(error.response.data)) {
+            const validationErrors = error.response.data
+                .map((err: any) => {
+                    if (err.constraints) {
+                        return Object.values(err.constraints).join(', ');
+                    }
+                    return null;
+                })
+                .filter((msg: any) => msg !== null);
+            
+            if (validationErrors.length > 0) {
+                throw new Error(validationErrors.join('. '));
+            }
+        }
+        
+        if (error.response?.data?.message && Array.isArray(error.response.data.message)) {
+            const validationErrors = error.response.data.message;
+            throw new Error(validationErrors.join(', '));
+        }
+        
+        if (error.response?.data?.error) {
+            throw new Error(error.response.data.error);
+        }
+
+        if (error.response?.data?.message && typeof error.response.data.message === 'string') {
+            throw new Error(error.response.data.message);
+        }
+        
+        // Error genérico
+        throw new Error("Error al actualizar usuario");
+    }
+};
+
 
 export const checkAvailability = async (email: string, displayName: string) => {
     try {
@@ -85,10 +153,13 @@ export const checkSession = async () => {
       { withCredentials: true }
     );
 
+    console.log("Session data:", data);
+
     return {
+      _id: data._id,
       email: data.email,
       role: data.role,
-      name: data.name,
+      name: data.userName,
       level: data.level,
       displayName: data.displayName,
       totalPoints: data.totalPoints,

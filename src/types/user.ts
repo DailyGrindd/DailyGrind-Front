@@ -15,8 +15,26 @@ export interface RegisterRequest {
     avatarUrl?: string;
 }
 
+// Resquest upload
+export interface UploadUserRequest {
+    userName?: string;
+    email?: string;
+    password?: string;
+    displayName?: string;
+    zone?: string;
+    isPublic?: boolean;
+    role?: string;
+    level?: number;
+}
+
+export interface UploadUserResponse {
+    message: string;
+    user: GetUserResponse;
+}
+
 // Estructura del usuario en respuesta exitosa
 export interface AuthUser {
+    _id?: string;
     email: string;
     role: string;
     name?: string;
@@ -36,6 +54,7 @@ export interface GetUserResponse {
     role: string;
     level: number;
     lastActive: string;
+    isActive: boolean;
 
     // Profile 
     profile: {
@@ -63,6 +82,7 @@ export interface GetUsersResponse {
     role: string;
     level: number;
     lastActive: string;
+    isActive: boolean;
 }
 
 // Response login
@@ -96,4 +116,16 @@ export interface FirebaseRegisterRequest {
 export interface FirebaseAuthResponse {
     message: string;
     user: AuthUser;
+}
+
+// Search User interface
+export interface SearchUser {
+    _id: string;
+    userName: string;
+    level: number;
+    profile?: {
+        displayName?: string;
+        avatar?: string;
+    };
+    lastActive: string;
 }
