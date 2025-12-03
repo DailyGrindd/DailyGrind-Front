@@ -153,11 +153,13 @@ export const checkSession = async () => {
       { withCredentials: true }
     );
 
+    console.log("Session data:", data);
+
     return {
       _id: data._id,
       email: data.email,
       role: data.role,
-      name: data.name,
+      name: data.userName,
       level: data.level,
       displayName: data.displayName,
       totalPoints: data.totalPoints,

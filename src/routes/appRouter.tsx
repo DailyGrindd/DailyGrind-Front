@@ -48,7 +48,7 @@ export const AppRouter = () => {
             <Route
                 path="/daily"
                 element={
-                    <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
+                    <ProtectedRouter isAllowed={isAuthenticated && user?.role === "Usuario"} redirectTo="/login">
                         <Daily />
                     </ProtectedRouter>
                 }
