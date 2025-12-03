@@ -503,12 +503,23 @@ export function Challenges() {
                                 <div>
                                     <h3 className="text-sm font-semibold text-gray-600 mb-2">Creado por</h3>
                                     <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50">
-                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                            <span className="text-primary font-bold">
-                                                {typeof selectedChallenge.ownerUser === 'object' 
-                                                    ? (selectedChallenge.ownerUser?.userName?.charAt(0).toUpperCase() || "?")
-                                                    : "?"}
-                                            </span>
+                                        {/* Avatar con borde gradiente */}
+                                        <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-r from-primary to-accent shadow-md flex-shrink-0">
+                                            <div className="w-full h-full rounded-full overflow-hidden bg-white">
+                                                <img
+                                                    src={
+                                                        typeof selectedChallenge.ownerUser === 'object' && selectedChallenge.ownerUser?.profile?.avatarUrl
+                                                            ? selectedChallenge.ownerUser.profile.avatarUrl
+                                                            : `https://api.dicebear.com/7.x/big-smile/svg?seed=${typeof selectedChallenge.ownerUser === 'object' ? selectedChallenge.ownerUser?.userName : 'Default'}`
+                                                    }
+                                                    alt={
+                                                        typeof selectedChallenge.ownerUser === 'object'
+                                                            ? (selectedChallenge.ownerUser?.profile?.displayName || selectedChallenge.ownerUser?.userName || "Usuario")
+                                                            : "Usuario"
+                                                    }
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
                                         </div>
                                         <div className="flex-1">
                                             <p className="font-semibold text-foreground">
@@ -565,6 +576,28 @@ export function Challenges() {
                                                 </span>
                                             ))}
                                         </div>
+                                    </div>
+                                )}
+
+                                {/* Botón de Asignar (solo para desafíos personales propios) */}
+                                {selectedChallenge.type === "personal" && 
+                                 typeof selectedChallenge.ownerUser === 'object' && 
+                                 selectedChallenge.ownerUser?._id === user?._id && (
+                                    <div className="pt-4 border-t">
+                                        <Button
+                                            className="w-full"
+                                            size="lg"
+                                            onClick={() => {
+                                                setSelectedChallenge(null);
+                                                window.location.href = "/daily";
+                                            }}
+                                        >
+                                            <Plus className="h-5 w-5 mr-2" />
+                                            Asignar a Misiones Diarias
+                                        </Button>
+                                        <p className="text-xs text-muted-foreground text-center mt-2">
+                                            Asigna este desafío a uno de tus slots personales (4 o 5)
+                                        </p>
                                     </div>
                                 )}
                             </div>

@@ -1,6 +1,6 @@
 import { Button } from "../components/button";
 import { 
-  LayoutDashboard, Heart, Award, Zap, Users, CircleUserRound, 
+  LayoutDashboard, Heart, Award, Zap, Users, 
   TrendingUp, LogOut, Menu, X, CalendarCheck, Search 
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -78,7 +78,7 @@ export function Header({ currentView }: HeaderProps) {
             { id: "users", label: "Usuarios", icon: Users, path: "/users" },
         ]
         : [
-            { id: "home", label: "Inicio", icon: CalendarCheck, path: "/home" },
+            { id: "daily", label: "Diario", icon: CalendarCheck, path: "/daily" },
             { id: "challenges", label: "Desafíos", icon: Zap, path: "/challenges" },
             { id: "ranking", label: "Ranking", icon: TrendingUp, path: "/ranking" },
         ];

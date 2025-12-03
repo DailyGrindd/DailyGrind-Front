@@ -6,6 +6,7 @@ export interface Challenge {
         userName: string;
         profile?: {
             displayName: string;
+            avatarUrl?: string;
         };
     };
     title: string;

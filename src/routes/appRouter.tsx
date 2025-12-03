@@ -7,6 +7,7 @@ import { Home } from "../pages/home";
 import { Dashboard } from "../pages/dashboard";
 import { Users } from "../pages/users";
 import { Challenges } from "../pages/challenges";
+import { Daily } from "../pages/daily";
 import { ProtectedRouter } from "./protectedRouter";
 import { Profile } from "../pages/profile";
 import { PublicProfile } from "../pages/publicProfile";
@@ -25,7 +26,7 @@ export const AppRouter = () => {
                     isAuthenticated
                         ? user?.role === "Administrador"
                             ? <Navigate to="/dashboard" replace />
-                            : <Navigate to="/home" replace />
+                            : <Navigate to="/daily" replace />
                         : <Login />
                 }
             />
@@ -36,13 +37,24 @@ export const AppRouter = () => {
                     isAuthenticated
                         ? user?.role === "Administrador"
                             ? <Navigate to="/dashboard" replace />
-                            : <Navigate to="/home" replace />
+                            : <Navigate to="/daily" replace />
                         : <Register />
                 }
             />
 
             <Route path="/home" element={<Home />} />
-
+            
+            {/* Ruta de Misiones Diarias */}
+            <Route
+                path="/daily"
+                element={
+                    <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
+                        <Daily />
+                    </ProtectedRouter>
+                }
+            />
+            
+            {/* Nueva ruta de perfil */}
             <Route
                 path="/profile"
                 element={
