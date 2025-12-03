@@ -98,3 +98,15 @@ export interface FirebaseAuthResponse {
     message: string;
     user: AuthUser;
 }
+
+// Search User interface
+export interface SearchUser {
+    _id: string;
+    userName: string;
+    level: number;
+    profile?: {
+        displayName?: string;
+        avatar?: string;
+    };
+    lastActive: string;
+}
