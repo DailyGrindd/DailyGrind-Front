@@ -129,3 +129,13 @@ export interface SearchUser {
     };
     lastActive: string;
 }
+
+export interface zoneInfo {
+    zone: string;
+    count: number;
+}
+
+export interface provinceInfo {
+    totalProvinces: number;
+    data: zoneInfo[];
+}

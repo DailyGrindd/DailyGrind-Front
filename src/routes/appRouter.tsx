@@ -55,7 +55,7 @@ export const AppRouter = () => {
             />
             
             {/* Nueva ruta de perfil */}
-            <Route
+            <Route 
                 path="/profile"
                 element={
                     <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">

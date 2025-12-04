@@ -286,7 +286,6 @@ export function Profile() {
                 >
                   <option value="">Selecciona tu provincia</option>
                   <option value="Buenos Aires">Buenos Aires</option>
-                  <option value="CABA">Ciudad Autónoma de Buenos Aires</option>
                   <option value="Catamarca">Catamarca</option>
                   <option value="Chaco">Chaco</option>
                   <option value="Chubut">Chubut</option>

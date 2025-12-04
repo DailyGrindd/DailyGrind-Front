@@ -51,3 +51,26 @@ export interface CompleteMissionResponse {
         currentStreak: number;
     };
 }
+
+export interface StatsPerDay {
+    totalSkipped: number;
+    totalPending: number;
+    totalCompleted: number;
+    averageSkipped: string;
+    averagePending: string;
+    averageCompleted: string;
+    period: string;
+}
+
+export interface MissionsTypeStats {
+    global: {
+        total: number;
+        completed: number;
+        percentageCompleted: string;
+    };
+    personal: {
+        total: number;
+        completed: number;
+        percentageCompleted: string;
+    };
+}

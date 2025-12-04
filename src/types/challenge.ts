@@ -92,3 +92,14 @@ export const getDifficultyLabel = (difficulty: 1 | 2 | 3): string => {
     };
     return labelMap[difficulty];
 };
+
+export interface CategoryStats {
+    category: string;
+    totalChallenges: number;
+    totalAssigned: number;
+    totalCompleted: number;
+}
+
+export interface CategoryStatsResponse {
+    data: CategoryStats[];
+}
