@@ -23,14 +23,23 @@ const AVATAR_SEEDS = [
     "Shadow", "Princess", "Murphy", "Pepper", "Jasper", "Angel", "Teddy", "Rosie"
 ];
 
-const AVATAR_OPTIONS = AVATAR_SEEDS.map(seed => 
-    `https://api.dicebear.com/7.x/big-smile/svg?seed=${seed}`
-);
+const AVATAR_STYLES = [
+    { id: "big-smile", name: "Sonrisas" },
+    { id: "big-ears", name: "Orejas Grandes" },
+    { id: "avataaars", name: "Avataaars" }
+];
+
+const generateAvatarOptions = (style: string) => {
+    return AVATAR_SEEDS.map(seed => 
+        `https://api.dicebear.com/7.x/${style}/svg?seed=${seed}`
+    );
+};
 
 export function Register() {
     const [loading, setLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
     const [selectedAvatar, setSelectedAvatar] = useState("");
+    const [avatarStyle, setAvatarStyle] = useState("big-smile");
     const [availabilityErrors, setAvailabilityErrors] = useState<{ email?: string; displayName?: string }>({});
     const [isGoogleRegister, setIsGoogleRegister] = useState(false);
     const hasShownError = useRef(false);
@@ -537,10 +546,34 @@ export function Register() {
                                     </div>
 
                                     <div className="space-y-2">
+                                        <Label>Estilo de Avatar</Label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {AVATAR_STYLES.map((style) => (
+                                                <button
+                                                    key={style.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setAvatarStyle(style.id);
+                                                        setSelectedAvatar(""); // Reset avatar selection when changing style
+                                                    }}
+                                                    className={`p-2 rounded-lg border-2 transition-all text-sm font-medium ${
+                                                        avatarStyle === style.id
+                                                            ? 'border-primary bg-primary/10 text-primary'
+                                                            : 'border-border hover:border-primary/50'
+                                                    }`}
+                                                    disabled={loading}
+                                                >
+                                                    {style.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
                                         <Label>Elige tu Avatar</Label>
                                         <div className="max-h-64 overflow-y-auto border border-border rounded-lg p-3 scrollbar-thin scrollbar-thumb-primary scrollbar-track-muted">
                                             <div className="grid grid-cols-4 gap-3">
-                                                {AVATAR_OPTIONS.map((avatar, index) => (
+                                                {generateAvatarOptions(avatarStyle).map((avatar, index) => (
                                                     <button
                                                         key={index}
                                                         type="button"

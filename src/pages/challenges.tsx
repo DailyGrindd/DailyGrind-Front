@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Plus, Trophy, Flame, Target, Edit2, Trash2, X, Users, TrendingUp, Calendar, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card";
 import { Button } from "../components/button";
@@ -20,6 +21,7 @@ import type { Challenge, CreateChallengeRequest, ChallengeCategory } from "../ty
 import { CHALLENGE_CATEGORIES, getDifficultyLabel, getDifficultyPoints } from "../types/challenge";
 
 export function Challenges() {
+    const navigate = useNavigate();
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [loading, setLoading] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -533,16 +535,28 @@ export function Challenges() {
                                                     : "desconocido"}
                                             </p>
                                         </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                                // TODO: Navegar al perfil del usuario
-                                                toast.info("Funcionalidad de perfil próximamente");
-                                            }}
-                                        >
-                                            Ver perfil
-                                        </Button>
+                                        {typeof selectedChallenge.ownerUser === 'object' && selectedChallenge.ownerUser && (() => {
+                                            const ownerUser = selectedChallenge.ownerUser as { _id: string; userName: string; profile?: { displayName: string; avatarUrl?: string; isPublic?: boolean } };
+                                            const isPublic = ownerUser.profile?.isPublic;
+                                            
+                                            // Solo mostrar el botón si el perfil es público
+                                            // Si isPublic es undefined, asumimos público por compatibilidad
+                                            if (isPublic === false) {
+                                                return null;
+                                            }
+                                            
+                                            return (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        navigate(`/profile/public/${ownerUser.userName}`);
+                                                    }}
+                                                >
+                                                    Ver perfil
+                                                </Button>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
 
