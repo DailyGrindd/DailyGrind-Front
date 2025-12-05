@@ -11,6 +11,7 @@ import { Daily } from "../pages/daily";
 import { ProtectedRouter } from "./protectedRouter";
 import { Profile } from "../pages/profile";
 import { PublicProfile } from "../pages/publicProfile";
+import { ChallengesAdmin } from "../pages/challengesAdmin";
 
 export const AppRouter = () => {
     const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
@@ -95,6 +96,15 @@ export const AppRouter = () => {
                 element={
                     <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
                         <Challenges />
+                    </ProtectedRouter>
+                }
+            />
+
+            <Route
+                path="/challengesAdmin"
+                element={
+                    <ProtectedRouter isAllowed={isAuthenticated && user?.role === "Administrador"} redirectTo="/login">
+                        <ChallengesAdmin />
                     </ProtectedRouter>
                 }
             />

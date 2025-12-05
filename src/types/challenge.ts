@@ -76,6 +76,35 @@ export interface UpdateChallengeRequest {
     minUserLevel?: number;
 }
 
+export interface CreateChallengeAdminRequest {
+    type: "global";
+    ownerUser: string;
+    title: string;
+    description: string;
+    category: ChallengeCategory;
+    difficulty: 1 | 2 | 3;
+    points: number;
+    tags?: string[];
+    isActive?: boolean;
+    minLevel?: number;
+    preRequisiteChallenge?: string;
+    maxPerDay?: number;
+    minUserLevel?: number;
+}
+
+export interface UpdateChallengeAdminRequest {
+    title?: string;
+    description?: string;
+    category?: ChallengeCategory;
+    difficulty?: 1 | 2 | 3;
+    points?: number;
+    tags?: string[];
+    minLevel?: number;
+    prerequisiteChallenge?: string;
+    maxPerDay?: number;
+    minUserLevel?: number;
+}
+
 export const getDifficultyPoints = (difficulty: 1 | 2 | 3): number => {
     const pointsMap = {
         1: 10, // Fácil

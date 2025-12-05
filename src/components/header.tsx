@@ -72,8 +72,7 @@ export function Header({ currentView }: HeaderProps) {
 
     const menuItems = isAdmin
         ? [
-            { id: "challenge-admin", label: "Desafíos", icon: Zap, path: "/challengesAdmin" },
-            { id: "badge", label: "Logros", icon: Award, path: "/badges" },
+            { id: "challengesAdmin", label: "Desafíos", icon: Zap, path: "/challengesAdmin" },
             { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
             { id: "users", label: "Usuarios", icon: Users, path: "/users" },
         ]
