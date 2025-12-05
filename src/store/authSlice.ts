@@ -8,6 +8,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  initialCheckDone: boolean;
 }
 
 const initialState: AuthState = {
@@ -15,6 +16,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   loading: false,
   error: null,
+  initialCheckDone: false,
 };
 
 export const loginThunk = createAsyncThunk(
@@ -130,10 +132,12 @@ const authSlice = createSlice({
       .addCase(checkSessionThunk.fulfilled, (state, action: PayloadAction<AuthUser>) => {
         state.user = action.payload;
         state.isAuthenticated = true;
+        state.initialCheckDone = true;
       })
       .addCase(checkSessionThunk.rejected, (state) => {
         state.user = null;
         state.isAuthenticated = false;
+        state.initialCheckDone = true;
       })
 
       // logout

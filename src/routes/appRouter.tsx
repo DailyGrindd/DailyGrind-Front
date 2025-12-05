@@ -14,10 +14,12 @@ import { PublicProfile } from "../pages/publicProfile";
 import { ChallengesAdmin } from "../pages/challengesAdmin";
 
 export const AppRouter = () => {
-    const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+    const { isAuthenticated, user, initialCheckDone } = useSelector((state: RootState) => state.auth);
 
-    // Removido: if (loading) return null; 
-    // Esto causaba que la página se pusiera en blanco durante cualquier proceso de autenticación
+    // Esperar a que se verifique la sesión inicial antes de renderizar rutas
+    if (!initialCheckDone) {
+        return null;
+    }
 
     return (
         <Routes>

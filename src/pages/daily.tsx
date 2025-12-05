@@ -14,11 +14,13 @@ import {
     Calendar,
     TrendingUp,
     Zap,
-    SkipForward
+    SkipForward,
+    Star
 } from "lucide-react";
 import { toast } from "sonner";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../store/store";
+import { checkSessionThunk } from "../store/authSlice";
 import type { DailyQuest, Mission } from "../types/dailyQuest";
 import type { Challenge } from "../types/challenge";
 import {
@@ -42,8 +44,11 @@ export function Daily() {
     const [availableChallenges, setAvailableChallenges] = useState<Challenge[]>([]);
     const [loadingChallenges, setLoadingChallenges] = useState(false);
     const [challengeViewMode, setChallengeViewMode] = useState<"my" | "community">("my");
+    const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+    const [levelUpData, setLevelUpData] = useState<{ message: string; newLevel: number } | null>(null);
     
     const { user } = useSelector((state: RootState) => state.auth);
+    const dispatch = useDispatch<any>();
 
     useEffect(() => {
         loadDailyQuest();
@@ -69,22 +74,20 @@ export function Daily() {
             setLoading(true);
             const data = await getMyDailyQuest();
             
-            // Si no hay misiones o está vacío, inicializar automáticamente
-            if (!data || !data.missions || data.missions.length === 0) {
-                const initResponse = await initializeDailyQuest();
-                setDailyQuest(initResponse.dailyQuest);
-                toast.success("Misiones del día generadas automáticamente");
-            } else {
+            // Tu backend siempre devuelve algo (DailyQuest existente o estructura vacía)
+            // Solo setear el estado, NO auto-inicializar
+            if (data) {
                 setDailyQuest(data);
+            } else {
+                // Si por alguna razón no hay respuesta, setear null para mostrar botón
+                setDailyQuest(null);
             }
         } catch (error: any) {
-            // Si falla al obtener, intentar inicializar
-            try {
-                const initResponse = await initializeDailyQuest();
-                setDailyQuest(initResponse.dailyQuest);
-                toast.success("Misiones del día generadas");
-            } catch (initError: any) {
-                toast.error(initError.response?.data?.error || "Error al cargar misiones del día");
+            // En caso de error, setear null para mostrar el botón de inicializar
+            setDailyQuest(null);
+            // Solo mostrar error si no es un 404 o similar
+            if (error.response?.status !== 404) {
+                toast.error(error.response?.data?.error || "Error al cargar misiones del día");
             }
         } finally {
             setLoading(false);
@@ -94,11 +97,44 @@ export function Daily() {
     const handleInitialize = async () => {
         try {
             setLoading(true);
+            
+            if (!user) {
+                toast.error("No hay usuario autenticado");
+                return;
+            }
+            
             const response = await initializeDailyQuest();
-            setDailyQuest(response.dailyQuest);
-            toast.success("¡Misiones diarias generadas!");
+            
+            // Manejar diferentes estructuras de respuesta
+            let dailyQuestData: DailyQuest;
+            
+            if (response.dailyQuest) {
+                // Nuevo DailyQuest creado: { message, dailyQuest }
+                dailyQuestData = response.dailyQuest;
+            } else if ((response as any)._id && (response as any).missions !== undefined) {
+                // DailyQuest existente devuelto directamente
+                dailyQuestData = response as unknown as DailyQuest;
+            } else {
+                toast.error("Respuesta inválida del servidor");
+                return;
+            }
+            
+            setDailyQuest(dailyQuestData);
+            
+            // Verificar si tiene misiones globales
+            const globalMissions = dailyQuestData.missions.filter(m => [1, 2, 3].includes(m.slot));
+            
+            if (globalMissions.length > 0) {
+                toast.success(`¡${globalMissions.length} misiones globales generadas!`);
+            } else {
+                toast.info("DailyQuest inicializado. No hay desafíos globales disponibles para tu nivel.");
+            }
         } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al inicializar misiones");
+            const errorMessage = error.response?.data?.error || 
+                               error.response?.data?.message || 
+                               error.message || 
+                               "Error al inicializar misiones";
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -108,8 +144,15 @@ export function Daily() {
         try {
             setLoading(true);
             const response = await rerollGlobalMission(slot);
-            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
-            await loadDailyQuest();
+            
+            // Actualizar estado local con la respuesta
+            if (response.dailyQuest) {
+                setDailyQuest(response.dailyQuest);
+            } else {
+                // Fallback: recargar desde servidor
+                await loadDailyQuest();
+            }
+            
             toast.success(`Misión renovada. Te quedan ${response.rerollsRemaining} rerolls`);
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al hacer reroll");
@@ -122,9 +165,33 @@ export function Daily() {
         try {
             setLoading(true);
             const response = await completeMission(slot);
-            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
-            await loadDailyQuest();
-            toast.success(`¡Misión completada! +${response.pointsEarned} puntos 🎉`);
+            
+            // Actualizar estado local con la respuesta
+            if (response.dailyQuest) {
+                setDailyQuest(response.dailyQuest);
+            } else {
+                // Fallback: recargar desde servidor
+                await loadDailyQuest();
+            }
+            
+            // Mostrar notificación de misión completada
+            let message = `¡Misión completada! +${response.pointsEarned} puntos`;
+            
+            toast.success(message + " 🎉");
+            
+            // Actualizar Redux para que el header se actualice
+            await dispatch(checkSessionThunk());
+            
+            // Verificar si hay level up
+            if (response.levelUp && response.levelInfo) {
+                setLevelUpData({
+                    message: response.levelUp.message,
+                    newLevel: response.levelInfo.currentLevel
+                });
+                setTimeout(() => {
+                    setShowLevelUpModal(true);
+                }, 500);
+            }
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al completar misión");
         } finally {
@@ -135,9 +202,16 @@ export function Daily() {
     const handleSkip = async (slot: number) => {
         try {
             setLoading(true);
-            await skipMission(slot);
-            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
-            await loadDailyQuest();
+            const response = await skipMission(slot);
+            
+            // Actualizar estado local con la respuesta
+            if (response.dailyQuest) {
+                setDailyQuest(response.dailyQuest);
+            } else {
+                // Fallback: recargar desde servidor
+                await loadDailyQuest();
+            }
+            
             toast.info("Misión skipeada");
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al skipear misión");
@@ -210,13 +284,19 @@ export function Daily() {
                 toast.info("Inicializando misiones del día...");
             }
             
-            await assignPersonalChallenge({
+            const response = await assignPersonalChallenge({
                 challengeId,
                 slot: selectedSlot
             });
             
-            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
-            await loadDailyQuest();
+            // Actualizar estado local con la respuesta
+            if (response.dailyQuest) {
+                setDailyQuest(response.dailyQuest);
+            } else {
+                // Fallback: recargar desde servidor
+                await loadDailyQuest();
+            }
+            
             setShowAssignModal(false);
             setSelectedSlot(null);
             toast.success("¡Desafío asignado correctamente!");
@@ -229,13 +309,19 @@ export function Daily() {
                     await initializeDailyQuest();
                     
                     // Reintentar asignación
-                    await assignPersonalChallenge({
+                    const retryResponse = await assignPersonalChallenge({
                         challengeId,
                         slot: selectedSlot
                     });
                     
-                    // Recargar el DailyQuest completo
-                    await loadDailyQuest();
+                    // Actualizar estado local con la respuesta
+                    if (retryResponse.dailyQuest) {
+                        setDailyQuest(retryResponse.dailyQuest);
+                    } else {
+                        // Fallback: recargar desde servidor
+                        await loadDailyQuest();
+                    }
+                    
                     setShowAssignModal(false);
                     setSelectedSlot(null);
                     toast.success("¡Desafío asignado correctamente!");
@@ -253,9 +339,16 @@ export function Daily() {
     const handleUnassign = async (slot: number) => {
         try {
             setLoading(true);
-            await unassignPersonalChallenge(slot);
-            // Recargar el DailyQuest completo para asegurar que todos los datos estén populated
-            await loadDailyQuest();
+            const response = await unassignPersonalChallenge(slot);
+            
+            // Actualizar estado local con la respuesta
+            if (response.dailyQuest) {
+                setDailyQuest(response.dailyQuest);
+            } else {
+                // Fallback: recargar desde servidor
+                await loadDailyQuest();
+            }
+            
             toast.success("Desafío desasignado");
         } catch (error: any) {
             toast.error(error.response?.data?.error || "Error al desasignar");
@@ -315,9 +408,13 @@ export function Daily() {
     };
 
     // Calcular estadísticas del día
-    const completedMissions = dailyQuest?.missions.filter(m => m.status === "completed").length || 0;
-    const totalPoints = dailyQuest?.missions.reduce((sum, m) => sum + m.pointsAwarded, 0) || 0;
-    const completionRate = dailyQuest?.missions.length 
+    const completedMissions = (dailyQuest && dailyQuest._id && dailyQuest.missions) 
+        ? dailyQuest.missions.filter(m => m.status === "completed").length 
+        : 0;
+    const totalPoints = (dailyQuest && dailyQuest._id && dailyQuest.missions) 
+        ? dailyQuest.missions.reduce((sum, m) => sum + m.pointsAwarded, 0) 
+        : 0;
+    const completionRate = (dailyQuest && dailyQuest._id && dailyQuest.missions && dailyQuest.missions.length) 
         ? Math.round((completedMissions / dailyQuest.missions.length) * 100) 
         : 0;
 
@@ -366,8 +463,17 @@ export function Daily() {
                     </div>
 
                     {/* Estadísticas del día */}
-                    {dailyQuest && (
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {(dailyQuest && dailyQuest._id) && (
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <Card>
+                                <CardContent className="pt-6">
+                                    <div className="text-center">
+                                        <Star className="h-8 w-8 text-primary mx-auto mb-2" />
+                                        <p className="text-3xl font-bold text-foreground">{user?.level || 1}</p>
+                                        <p className="text-sm text-muted-foreground">Nivel</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
                             <Card>
                                 <CardContent className="pt-6">
                                     <div className="text-center">
@@ -410,8 +516,7 @@ export function Daily() {
                         </div>
                     )}
 
-                    {/* Sin misiones - Inicializar */}
-                    {!dailyQuest && (
+                    {(!dailyQuest || !dailyQuest._id) && (
                         <Card>
                             <CardContent className="pt-6 text-center py-12">
                                 <Zap className="h-16 w-16 text-primary mx-auto mb-4" />
@@ -419,16 +524,24 @@ export function Daily() {
                                 <p className="text-muted-foreground mb-6">
                                     Genera tus 3 misiones globales diarias y comienza a ganar puntos
                                 </p>
-                                <Button size="lg" onClick={handleInitialize} disabled={loading}>
-                                    <Zap className="h-5 w-5 mr-2" />
-                                    Generar Misiones
+                                <Button 
+                                    size="lg" 
+                                    onClick={handleInitialize}
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                                    ) : (
+                                        <Zap className="h-5 w-5 mr-2" />
+                                    )}
+                                    {loading ? "Generando..." : "Generar Misiones"}
                                 </Button>
                             </CardContent>
                         </Card>
                     )}
 
                     {/* Misiones */}
-                    {dailyQuest && (
+                    {(dailyQuest && dailyQuest._id) && (
                         <>
                             {/* Misiones Globales (Slots 1-3) */}
                             <Card>
@@ -768,6 +881,79 @@ export function Daily() {
                             </div>
                         )}
                     </div>
+                </div>
+            )}
+
+            {/* Modal de Level Up */}
+            {showLevelUpModal && levelUpData && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                    
+                    {/* Modal */}
+                    <div className="relative bg-gradient-to-br from-purple-500 via-indigo-600 to-purple-700 rounded-3xl p-8 w-full max-w-md mx-4 shadow-2xl animate-in zoom-in-95 duration-500">
+                        {/* Confeti animado con CSS */}
+                        <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+                            {[...Array(30)].map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="absolute w-2 h-2 rounded-full animate-confetti"
+                                    style={{
+                                        left: `${Math.random() * 100}%`,
+                                        top: '-10%',
+                                        backgroundColor: ['#FFD700', '#FF6B6B', '#4ECDC4', '#95E1D3', '#F38181'][Math.floor(Math.random() * 5)],
+                                        animationDelay: `${Math.random() * 2}s`,
+                                        animationDuration: `${2 + Math.random() * 2}s`
+                                    }}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Contenido */}
+                        <div className="relative text-center text-white">
+                            {/* Icono animado */}
+                            <div className="mb-6 animate-bounce">
+                                <div className="w-24 h-24 mx-auto bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                    <Star className="w-16 h-16 text-yellow-300 fill-yellow-300 animate-pulse" />
+                                </div>
+                            </div>
+
+                            {/* Texto */}
+                            <h2 className="text-4xl font-bold mb-2 drop-shadow-lg">¡LEVEL UP!</h2>
+                            <p className="text-2xl font-semibold mb-4 drop-shadow-md">{levelUpData.message}</p>
+                            <div className="text-6xl font-black mb-6 drop-shadow-2xl animate-pulse">
+                                {levelUpData.newLevel}
+                            </div>
+
+                            {/* Botón */}
+                            <Button
+                                onClick={() => {
+                                    setShowLevelUpModal(false);
+                                    setLevelUpData(null);
+                                }}
+                                className="bg-white text-purple-600 hover:bg-gray-100 font-bold py-3 px-8 rounded-full shadow-lg hover:scale-105 transition-transform"
+                            >
+                                ¡Genial!
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Estilos de animación de confeti */}
+                    <style>{`
+                        @keyframes confetti {
+                            0% {
+                                transform: translateY(0) rotate(0deg);
+                                opacity: 1;
+                            }
+                            100% {
+                                transform: translateY(100vh) rotate(720deg);
+                                opacity: 0;
+                            }
+                        }
+                        .animate-confetti {
+                            animation: confetti linear infinite;
+                        }
+                    `}</style>
                 </div>
             )}
         </div>

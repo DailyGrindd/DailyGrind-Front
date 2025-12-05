@@ -50,6 +50,17 @@ export interface CompleteMissionResponse {
         totalCompleted: number;
         currentStreak: number;
     };
+    levelInfo?: {
+        currentLevel: number;
+        totalPoints: number;
+        currentLevelPoints: number;
+        pointsToNextLevel: number;
+        pointsRequiredForNextLevel: number;
+        progressPercent: number;
+    };
+    levelUp?: {
+        message: string;
+    };
 }
 
 export interface StatsPerDay {

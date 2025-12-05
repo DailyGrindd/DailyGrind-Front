@@ -22,6 +22,7 @@ export function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("badges");
+  const [levelInfo, setLevelInfo] = useState<any>(null);
   
   // Estados para el modal de edición
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -44,6 +45,7 @@ export function Profile() {
 
   useEffect(() => {
     fetchProfile();
+    fetchLevelInfo();
   }, [navigate, userEmail]);
 
   const fetchProfile = async () => {
@@ -62,6 +64,17 @@ export function Profile() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLevelInfo = async () => {
+    try {
+      const { instanceAxios } = await import("../api/axios");
+      const response = await instanceAxios.get("/users/level/info");
+      console.log("Level Info Response:", response.data);
+      setLevelInfo(response.data.levelInfo);
+    } catch (error) {
+      console.error("Error loading level info:", error);
     }
   };
 
@@ -449,6 +462,22 @@ export function Profile() {
                   <p className="text-xs text-muted-foreground">Completed</p>
                 </div>
               </div>
+
+              {/* Barra de nivel compacta */}
+              {levelInfo && (
+                <div className="mt-6 w-full max-w-md mx-auto">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                    <span className="font-medium">Nivel {levelInfo.currentLevel}</span>
+                    <span>{levelInfo.currentLevelPoints}/{levelInfo.pointsRequiredForNextLevel} XP</span>
+                  </div>
+                  <div className="h-2 bg-background rounded-full overflow-hidden border border-border">
+                    <div
+                      className="h-full bg-gradient-to-r from-accent via-primary to-secondary transition-all duration-500"
+                      style={{ width: `${levelInfo.progressPercent}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
 
               {/* Botones de acción */}
               <div className="flex gap-3 mt-6">
