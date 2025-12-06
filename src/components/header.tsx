@@ -1,6 +1,6 @@
 import { Button } from "../components/button";
 import { 
-  LayoutDashboard, Heart, Award, Zap, Users, 
+  LayoutDashboard, Heart, Zap, Users, 
   TrendingUp, LogOut, Menu, X, CalendarCheck, Search 
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";

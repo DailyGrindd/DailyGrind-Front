@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
-import { Plus, Flame, Edit2, Trash2, X, RefreshCw, Search, Filter, LibraryBig, Zap, SlidersHorizontal } from "lucide-react";
+import { Plus, Flame, Edit2, Trash2, X, RefreshCw, Search, Target, LibraryBig, Loader2, Zap, SlidersHorizontal, Calendar, Trophy, Users, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
@@ -9,17 +9,9 @@ import { Label } from "../components/label";
 import { Select } from "../components/select";
 import { Header } from "../components/header";
 import { toast } from "sonner";
-import {
-    getAllChallenges,
-    createChallengeAdmin,
-    updateChallengeAdmin,
-    deleteChallenge,
-    reactivateChallenge,
-    getChallengeById
-} from "../services/challengeServices";
+import { getAllChallenges, createChallengeAdmin, updateChallengeAdmin, deleteChallenge, reactivateChallenge, getChallengeById } from "../services/challengeServices";
 import type { Challenge, CreateChallengeAdminRequest, UpdateChallengeAdminRequest, ChallengeCategory } from "../types/challenge";
 import { CHALLENGE_CATEGORIES, getDifficultyLabel, getDifficultyPoints } from "../types/challenge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "../components/dialog";
 import { useSelector } from "react-redux";
 import type { RootState } from "../store/store";
 
@@ -111,62 +103,56 @@ export function ChallengesAdmin() {
         setSelectedCategory(selectedCategory === category ? null : category);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
+    const handleDeleteClick = (id: string) => {
+        setChallengeToDelete(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!challengeToDelete) return;
+
         try {
             setLoading(true);
             
-            // Preparar los datos del desafío
-            const challengeData = {
-                type: "global" as const,
-                ownerUser: user?._id || "",
-                title: formData.title,
-                description: formData.description,
-                category: formData.category,
-                difficulty: formData.difficulty,
-                points: getDifficultyPoints(formData.difficulty),
-                isActive: true,
-                tags: formData.tags?.filter(tag => tag.trim().length > 0) || [],
-                minLevel: formData.minLevel,
-                preRequisiteChallenge: formData.preRequisiteChallenge || undefined,
-                maxPerDay: formData.maxPerDay,
-                minUserLevel: formData.minLevel // Mismo valor que minLevel
-            };
-
-            if (editingChallenge) {
-                const updateData: UpdateChallengeAdminRequest = {
-                    title: challengeData.title,
-                    description: challengeData.description,
-                    category: challengeData.category,
-                    difficulty: challengeData.difficulty,
-                    points: challengeData.points,
-                    tags: challengeData.tags,
-                    minLevel: challengeData.minLevel,
-                    prerequisiteChallenge: challengeData.preRequisiteChallenge,
-                    maxPerDay: challengeData.maxPerDay,
-                    minUserLevel: challengeData.minUserLevel
-                };
-                await updateChallengeAdmin(editingChallenge._id, updateData);
-                toast.success("Desafío actualizado exitosamente");
+            if (selectedChallenge?.isActive) {
+                await deleteChallenge(challengeToDelete);
+                toast.success("Desafío desactivado exitosamente");
             } else {
-                await createChallengeAdmin(challengeData);
-                toast.success("Desafío global creado exitosamente");
+                await reactivateChallenge(challengeToDelete);
+                toast.success("Desafío reactivado exitosamente");
             }
-
-            resetForm();
-            refetch();
+            
+            setShowDeleteConfirm(false);
+            setChallengeToDelete(null);
+            
+            // Cerrar el dialog de detalles después de desactivar/reactivar
+            setShowDetailDialog(false);
+            setSelectedChallenge(null);
+            
+            await refetch();
         } catch (error: any) {
-            console.error("Error completo:", error);
-            const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || "Error al guardar desafío";
-            toast.error(errorMessage);
+            toast.error(error.message || "Error al cambiar estado del desafío");
         } finally {
             setLoading(false);
         }
     };
 
     const handleEdit = (challenge: Challenge) => {
+        console.log("Challenge a editar:", challenge);
+        console.log("PreRequisite:", challenge.requirements.preRequisiteChallenge);
+        
         setEditingChallenge(challenge);
+        
+        // Extraer el ID del prerequisito si es un objeto
+        let prerequisiteId: string | undefined = undefined;
+        if (challenge.requirements.preRequisiteChallenge) {
+            if (typeof challenge.requirements.preRequisiteChallenge === 'string') {
+                prerequisiteId = challenge.requirements.preRequisiteChallenge;
+            } else if (typeof challenge.requirements.preRequisiteChallenge === 'object' && '_id' in challenge.requirements.preRequisiteChallenge) {
+                prerequisiteId = (challenge.requirements.preRequisiteChallenge as any)._id;
+            }
+        }
+        
         setFormData({
             type: "global",
             ownerUser: typeof challenge.ownerUser === 'object' ? challenge.ownerUser._id : challenge.ownerUser || "",
@@ -178,62 +164,13 @@ export function ChallengesAdmin() {
             tags: challenge.tags || [],
             isActive: challenge.isActive,
             minLevel: challenge.requirements.minLevel,
-            preRequisiteChallenge: challenge.requirements.preRequisiteChallenge,
+            preRequisiteChallenge: prerequisiteId,
             maxPerDay: challenge.rules.maxPerDay,
             minUserLevel: challenge.rules.minUserLevel
         });
-        setShowDetailDialog(false);
+        
+        console.log("FormData seteado con prerequisiteId:", prerequisiteId);
         setShowCreateDialog(true);
-    };
-
-    const handleDeleteClick = (id: string) => {
-        setChallengeToDelete(id);
-        setShowDeleteConfirm(true);
-        setShowDetailDialog(false);
-    };
-
-    const handleDeleteConfirm = async () => {
-        if (!challengeToDelete) return;
-
-        try {
-            setLoading(true);
-            await deleteChallenge(challengeToDelete);
-            toast.success("Desafío desactivado exitosamente");
-            setShowDeleteConfirm(false);
-            setChallengeToDelete(null);
-            refetch();
-        } catch (error: any) {
-            toast.error(error.message || "Error al desactivar desafío");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleReactivate = async (id: string) => {
-        try {
-            setLoading(true);
-            await reactivateChallenge(id);
-            toast.success("Desafío reactivado exitosamente");
-            setShowDetailDialog(false);
-            refetch();
-        } catch (error: any) {
-            toast.error(error.message || "Error al reactivar desafío");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleViewDetails = async (challenge: Challenge) => {
-        try {
-            setLoading(true);
-            const fullChallenge = await getChallengeById(challenge._id);
-            setSelectedChallenge(fullChallenge);
-            setShowDetailDialog(true);
-        } catch (error: any) {
-            toast.error("Error al cargar detalles del desafío");
-        } finally {
-            setLoading(false);
-        }
     };
 
     const resetForm = () => {
@@ -254,6 +191,134 @@ export function ChallengesAdmin() {
         });
         setEditingChallenge(null);
         setShowCreateDialog(false);
+        
+        // Si estamos editando desde el detalle, refrescar los datos
+        if (showDetailDialog && selectedChallenge) {
+            detalleQuery.refetch();
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        try {
+            setLoading(true);
+            
+            // Preparar los datos del desafío
+            const challengeData = {
+                type: "global" as const,
+                ownerUser: user?._id || "",
+                title: formData.title,
+                description: formData.description,
+                category: formData.category,
+                difficulty: formData.difficulty,
+                points: getDifficultyPoints(formData.difficulty),
+                isActive: true,
+                tags: formData.tags?.filter(tag => tag.trim().length > 0) || [],
+                minLevel: formData.minLevel,
+                preRequisiteChallenge: formData.preRequisiteChallenge && formData.preRequisiteChallenge.trim() !== "" 
+                    ? formData.preRequisiteChallenge 
+                    : null,
+                maxPerDay: formData.maxPerDay,
+                minUserLevel: formData.minLevel 
+            };
+
+            if (editingChallenge) {
+                const updateData: UpdateChallengeAdminRequest = {
+                    title: challengeData.title,
+                    description: challengeData.description,
+                    category: challengeData.category,
+                    difficulty: challengeData.difficulty,
+                    points: challengeData.points,
+                    tags: challengeData.tags,
+                    minLevel: challengeData.minLevel,
+                    preRequisiteChallenge: challengeData.preRequisiteChallenge as string | null | undefined,
+                    maxPerDay: challengeData.maxPerDay,
+                    minUserLevel: challengeData.minUserLevel
+                };
+                console.log("Datos a enviar para actualizar:", updateData);
+                await updateChallengeAdmin(editingChallenge._id, updateData);
+                toast.success("Desafío actualizado exitosamente");
+                
+                if (showDetailDialog) {
+                    await detalleQuery.refetch();
+                    // Actualizar el selectedChallenge con los nuevos datos
+                    const updatedChallenge = await getChallengeById(editingChallenge._id);
+                    setSelectedChallenge(updatedChallenge);
+                }
+            } else {
+                await createChallengeAdmin(challengeData);
+                toast.success("Desafío global creado exitosamente");
+            }
+
+            // Cerrar solo el dialog de editar, no el de detalles
+            setFormData({
+                type: "global",
+                ownerUser: user?._id || "",
+                title: "",
+                description: "",
+                category: "Ejercicio Físico",
+                difficulty: 1,
+                points: 10,
+                tags: [],
+                isActive: true,
+                minLevel: 0,
+                preRequisiteChallenge: undefined,
+                maxPerDay: 1,
+                minUserLevel: 0
+            });
+            setEditingChallenge(null);
+            setShowCreateDialog(false);
+            
+            refetch();
+        } catch (error: any) {
+            console.error("Error completo:", error);
+            const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || "Error al guardar desafío";
+            toast.error(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Agregar query para el detalle del desafío
+    const detalleQuery = useQuery<Challenge>({
+        queryKey: ["detalleChallengeAdmin", selectedChallenge?._id],
+        queryFn: async () => {
+            if (!selectedChallenge?._id) throw new Error("ID inválido");
+            return await getChallengeById(selectedChallenge._id);
+        },
+        enabled: showDetailDialog && selectedChallenge != null,
+        staleTime: 0,
+        gcTime: 1000 * 30,
+    });
+
+    const handleViewDetails = async (challenge: Challenge) => {
+        try {
+            setLoading(true);
+            const fullChallenge = await getChallengeById(challenge._id);
+            setSelectedChallenge(fullChallenge);
+            setShowDetailDialog(true);
+        } catch (error: any) {
+            toast.error("Error al cargar detalles del desafío");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReactivate = async (id: string) => {
+        try {
+            setLoading(true);
+            await reactivateChallenge(id);
+            toast.success("Desafío reactivado exitosamente");
+            setShowDetailDialog(false);
+            setSelectedChallenge(null);
+            
+            await refetch();
+        } catch (error: any) {
+            toast.error(error.message || "Error al reactivar desafío");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const getDifficultyColor = (difficulty: number) => {
@@ -450,7 +515,7 @@ export function ChallengesAdmin() {
                     </div>
                 )}
 
-                {/* Mensaje inicial si no hay categoría seleccionada */}
+                {/* Si no hay categoría seleccionada */}
                 {!selectedCategory && (
                     <Card>
                         <CardContent className="text-center py-12">
@@ -484,9 +549,9 @@ export function ChallengesAdmin() {
                                 </div>
                                 <button
                                     onClick={() => setShowDetailDialog(false)}
-                                    className="p-2 hover:bg-background rounded-lg transition"
+                                    className="p-2 hover:bg-active hover:text-white text-muted-foreground rounded-lg transition"
                                 >
-                                    <X className="w-5 h-5 text-muted-foreground" />
+                                    <X className="w-5 h-5" />
                                 </button>
                             </div>
 
@@ -526,16 +591,19 @@ export function ChallengesAdmin() {
                                     <h3 className="text-sm font-semibold text-muted-foreground mb-3">Estadísticas</h3>
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="text-center p-3 bg-accent/50 rounded-lg">
-                                            <p className="text-2xl font-bold text-foreground">{selectedChallenge.stats.timesAssigned}</p>
+                                            <Users className="h-5 w-5 mx-auto mb-1 text-active" />
+                                            <p className="text-2xl font-medium text-foreground">{selectedChallenge.stats.timesAssigned}</p>
                                             <p className="text-xs text-muted-foreground">Asignados</p>
                                         </div>
                                         <div className="text-center p-3 bg-accent/50 rounded-lg">
-                                            <p className="text-2xl font-bold text-foreground">{selectedChallenge.stats.timesCompleted}</p>
+                                            <Trophy className="h-5 w-5 mx-auto mb-1 text-active" />
+                                            <p className="text-2xl font-medium text-foreground">{selectedChallenge.stats.timesCompleted}</p>
                                             <p className="text-xs text-muted-foreground">Completados</p>
                                         </div>
                                         <div className="text-center p-3 bg-accent/50 rounded-lg">
-                                            <p className="text-2xl font-bold text-foreground">{selectedChallenge.stats.completionRate.toFixed(0)}%</p>
-                                            <p className="text-xs text-muted-foreground">Éxito</p>
+                                            <TrendingUp className="h-5 w-5 mx-auto mb-1 text-active" />
+                                            <p className="text-2xl font-medium text-foreground">{selectedChallenge.stats.completionRate.toFixed(0)}%</p>
+                                            <p className="text-xs text-muted-foreground">Tasa de éxito</p>
                                         </div>
                                     </div>
                                 </div>
@@ -544,18 +612,25 @@ export function ChallengesAdmin() {
                                 <div>
                                     <h3 className="text-sm font-semibold text-muted-foreground mb-2">Requisitos</h3>
                                     <div className="space-y-2 text-sm">
-                                        <div className="flex items-center justify-between p-2 bg-accent/30 rounded">
-                                            <span>Nivel mínimo de usuario</span>
-                                            <span className="font-semibold">{selectedChallenge.rules.minUserLevel}</span>
+                                        <div className="flex items-center gap-2">
+                                            <Target className="h-4 w-4 text-muted-foreground" />
+                                            <span>Nivel mínimo: {selectedChallenge.requirements.minLevel}</span>
                                         </div>
-                                        <div className="flex items-center justify-between p-2 bg-accent/30 rounded">
-                                            <span>Nivel mínimo del desafío</span>
-                                            <span className="font-semibold">{selectedChallenge.requirements.minLevel}</span>
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                            <span>Máximo {selectedChallenge.rules.maxPerDay} vez(ces) por día</span>
                                         </div>
-                                        <div className="flex items-center justify-between p-2 bg-accent/30 rounded">
-                                            <span>Máximo por día</span>
-                                            <span className="font-semibold">{selectedChallenge.rules.maxPerDay}</span>
-                                        </div>
+                                        {selectedChallenge.requirements.preRequisiteChallenge && (
+                                            <div className="flex items-center gap-2">
+                                                <Trophy className="h-4 w-4 text-muted-foreground" />
+                                                <span>
+                                                    Requiere completar: {' '}
+                                                    {typeof selectedChallenge.requirements.preRequisiteChallenge === 'object' 
+                                                        ? (selectedChallenge.requirements.preRequisiteChallenge as any).title
+                                                        : 'Desafío prerequisito'}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -565,8 +640,8 @@ export function ChallengesAdmin() {
                                         <h3 className="text-sm font-semibold text-muted-foreground mb-2">Etiquetas</h3>
                                         <div className="flex flex-wrap gap-2">
                                             {selectedChallenge.tags.map((tag, idx) => (
-                                                <span key={idx} className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full">
-                                                    {tag}
+                                                <span key={idx} className="inline-flex items-center px-3 py-1 bg-primary/10 border border-primary/20 text-primary text-sm rounded-full font-medium">
+                                                    #{tag}
                                                 </span>
                                             ))}
                                         </div>
@@ -579,7 +654,7 @@ export function ChallengesAdmin() {
                                         <>
                                             <Button
                                                 variant="outline"
-                                                className="flex-1"
+                                                className="flex-1 text-primary hover:bg-primary"
                                                 onClick={() => handleEdit(selectedChallenge)}
                                             >
                                                 <Edit2 className="h-4 w-4 mr-2" />
@@ -587,7 +662,7 @@ export function ChallengesAdmin() {
                                             </Button>
                                             <Button
                                                 variant="outline"
-                                                className="flex-1 text-red-500 hover:bg-red-500/10"
+                                                className="flex-1 text-red-500 hover:bg-red-500"
                                                 onClick={() => handleDeleteClick(selectedChallenge._id)}
                                             >
                                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -610,264 +685,311 @@ export function ChallengesAdmin() {
                 )}
 
                 {/* Dialog Crear/Editar */}
-                <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogClose onClose={resetForm} />
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-3">
-                                <Plus className="h-5 w-5 text-primary" />
-                                {editingChallenge ? "Editar Desafío Global" : "Crear Desafío Global"}
-                            </DialogTitle>
-                        </DialogHeader>
-
-                        <div className="space-y-4 px-6 pb-6 pt-6">
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                {/* Título del Desafío */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="title">Título del Desafío *</Label>
-                                    <Input
-                                        id="title"
-                                        value={formData.title}
-                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                        placeholder="Ej: Caminar 10,000 pasos"
-                                        required
-                                    />
+                {showCreateDialog && (
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+                        <div 
+                            className="fixed inset-0 bg-black/50 z-[99998]"
+                            onClick={resetForm}
+                        />
+                        
+                        <div className="relative bg-card border border-border rounded-2xl w-full max-w-2xl mx-4 shadow-xl max-h-[90vh] overflow-y-auto z-[99999]">
+                            <div className="flex items-center justify-between p-6 border-b">
+                                <div className="flex items-center gap-3">
+                                    <Plus className="h-5 w-5 text-primary" />
+                                    <h2 className="text-xl font-bold">
+                                        {editingChallenge ? "Editar Desafío Global" : "Crear Desafío Global"}
+                                    </h2>
                                 </div>
+                                <button
+                                    onClick={resetForm}
+                                    className="p-2 hover:bg-background rounded-lg transition"
+                                >
+                                    <X className="w-5 h-5 text-muted-foreground" />
+                                </button>
+                            </div>
 
-                                {/* Descripción */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="description">Descripción *</Label>
-                                    <textarea
-                                        id="description"
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        placeholder="Describe el desafío..."
-                                        className="w-full min-h-[100px] p-3 text-sm border border-border rounded-md bg-input text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                                        required
-                                    />
-                                </div>
-
-                                {/* Grid para Categoría y Dificultad */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Categoría */}
+                            <div className="space-y-4 px-6 pb-6 pt-6">
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    {/* Título del Desafío */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="category">Categoría *</Label>
-                                        <Select
-                                            id="category"
-                                            value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value as ChallengeCategory })}
+                                        <Label htmlFor="title">Título del Desafío *</Label>
+                                        <Input
+                                            id="title"
+                                            value={formData.title}
+                                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                            placeholder="Ej: Caminar 10,000 pasos"
                                             required
-                                        >
-                                            {CHALLENGE_CATEGORIES.map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                        </Select>
+                                        />
                                     </div>
 
-                                    {/* Dificultad */}
+                                    {/* Descripción */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="difficulty">Dificultad *</Label>
+                                        <Label htmlFor="description">Descripción *</Label>
+                                        <textarea
+                                            id="description"
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            placeholder="Describe el desafío..."
+                                            className="w-full min-h-[100px] p-3 text-sm border border-border rounded-md bg-input text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Grid para Categoría y Dificultad */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Categoría */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="category">Categoría *</Label>
+                                            <Select
+                                                id="category"
+                                                value={formData.category}
+                                                onChange={(e) => setFormData({ ...formData, category: e.target.value as ChallengeCategory })}
+                                                required
+                                            >
+                                                {CHALLENGE_CATEGORIES.map(cat => (
+                                                    <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                            </Select>
+                                        </div>
+
+                                        {/* Dificultad */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="difficulty">Dificultad *</Label>
+                                            <Select
+                                                id="difficulty"
+                                                value={formData.difficulty.toString()}
+                                                onChange={(e) => setFormData({
+                                                    ...formData,
+                                                    difficulty: Number(e.target.value) as 1 | 2 | 3,
+                                                    points: getDifficultyPoints(Number(e.target.value) as 1 | 2 | 3)
+                                                })}
+                                                required
+                                            >
+                                                <option value="1">Fácil (10 pts)</option>
+                                                <option value="2">Medio (20 pts)</option>
+                                                <option value="3">Difícil (30 pts)</option>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    {/* Grid para Nivel Mínimo y Máx. por Día */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="minLevel">Nivel Mínimo</Label>
+                                            <Input
+                                                id="minLevel"
+                                                type="number"
+                                                min="0"
+                                                value={formData.minLevel}
+                                                onChange={(e) => {
+                                                    const value = Number(e.target.value);
+                                                    setFormData({ 
+                                                        ...formData, 
+                                                        minLevel: value,
+                                                        minUserLevel: value 
+                                                    });
+                                                }}
+                                            />
+                                            <p className="text-xs text-muted-foreground">Nivel requerido para acceder al desafío</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="maxPerDay">Máximo por Día</Label>
+                                            <Input
+                                                id="maxPerDay"
+                                                type="number"
+                                                min="1"
+                                                value={formData.maxPerDay}
+                                                onChange={(e) => setFormData({ ...formData, maxPerDay: Number(e.target.value) })}
+                                            />
+                                            <p className="text-xs text-muted-foreground">Veces que se puede completar por día</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Desafío Prerequisito */}
+                                    <div className="space-y-2">
+                                        <Label htmlFor="prerequisite">Desafío Prerequerido (Opcional)</Label>
                                         <Select
-                                            id="difficulty"
-                                            value={formData.difficulty.toString()}
+                                            id="prerequisite"
+                                            value={formData.preRequisiteChallenge || ""}
                                             onChange={(e) => setFormData({
                                                 ...formData,
-                                                difficulty: Number(e.target.value) as 1 | 2 | 3,
-                                                points: getDifficultyPoints(Number(e.target.value) as 1 | 2 | 3)
+                                                preRequisiteChallenge: e.target.value || undefined
                                             })}
-                                            required
                                         >
-                                            <option value="1">Fácil (10 pts)</option>
-                                            <option value="2">Medio (20 pts)</option>
-                                            <option value="3">Difícil (30 pts)</option>
+                                            <option value="">Sin prerequisito</option>
+                                            {challenges
+                                                .filter(c => c.isActive && c._id !== editingChallenge?._id)
+                                                .map(c => (
+                                                    <option key={c._id} value={c._id}>
+                                                        {c.title} ({c.category})
+                                                    </option>
+                                                ))}
                                         </Select>
+                                        <p className="text-xs text-muted-foreground">Desafío que debe completarse antes de acceder a este</p>
                                     </div>
-                                </div>
 
-                                {/* Grid para Nivel Mínimo y Máx. por Día */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Nivel Mínimo */}
+                                    {/* Tags */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="minLevel">Nivel Mínimo</Label>
+                                        <Label htmlFor="tags">Etiquetas (Opcional)</Label>
                                         <Input
-                                            id="minLevel"
-                                            type="number"
-                                            min="0"
-                                            value={formData.minLevel}
+                                            id="tags"
+                                            value={formData.tags?.join(", ") || ""}
                                             onChange={(e) => {
-                                                const value = Number(e.target.value);
-                                                setFormData({ 
-                                                    ...formData, 
-                                                    minLevel: value,
-                                                    minUserLevel: value 
-                                                });
+                                                const inputValue = e.target.value;
+                                                // Si está vacío, limpiar el array
+                                                if (inputValue.trim() === "") {
+                                                    setFormData({ ...formData, tags: [] });
+                                                    return;
+                                                }
+                                                // Dividir por comas
+                                                const tagsArray = inputValue
+                                                    .split(",")
+                                                    .map(tag => tag.trim());
+                                                setFormData({ ...formData, tags: tagsArray });
                                             }}
+                                            placeholder="deporte, cardio, resistencia (separadas por comas)"
                                         />
-                                        <p className="text-xs text-muted-foreground">Nivel requerido para acceder al desafío</p>
-                                    </div>
-
-                                    {/* Máx. por Día */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="maxPerDay">Máximo por Día</Label>
-                                        <Input
-                                            id="maxPerDay"
-                                            type="number"
-                                            min="1"
-                                            value={formData.maxPerDay}
-                                            onChange={(e) => setFormData({ ...formData, maxPerDay: Number(e.target.value) })}
-                                        />
-                                        <p className="text-xs text-muted-foreground">Veces que se puede completar por día</p>
-                                    </div>
-                                </div>
-
-                                {/* Desafío Prerequisito */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="prerequisite">Desafío Prerequerido (Opcional)</Label>
-                                    <Select
-                                        id="prerequisite"
-                                        value={formData.preRequisiteChallenge || ""}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            preRequisiteChallenge: e.target.value || undefined
-                                        })}
-                                    >
-                                        <option value="">Sin prerequisito</option>
-                                        {challenges
-                                            .filter(c => c.isActive && c._id !== editingChallenge?._id)
-                                            .map(c => (
-                                                <option key={c._id} value={c._id}>
-                                                    {c.title} ({c.category})
-                                                </option>
-                                            ))}
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">Desafío que debe completarse antes de acceder a este</p>
-                                </div>
-
-                                {/* Tags */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="tags">Etiquetas (Opcional)</Label>
-                                    <Input
-                                        id="tags"
-                                        value={formData.tags?.join(", ") || ""}
-                                        onChange={(e) => {
-                                            const inputValue = e.target.value;
-                                            // Si está vacío, limpiar el array
-                                            if (inputValue.trim() === "") {
-                                                setFormData({ ...formData, tags: [] });
-                                                return;
-                                            }
-                                            // Dividir por comas
-                                            const tagsArray = inputValue
-                                                .split(",")
-                                                .map(tag => tag.trim());
-                                            // Guardar todas las tags, incluso las vacías mientras se escribe
-                                            setFormData({ ...formData, tags: tagsArray });
-                                        }}
-                                        placeholder="deporte, cardio, resistencia (separadas por comas)"
-                                    />
-                                    <p className="text-xs text-muted-foreground">Escribe las etiquetas separadas por comas</p>
-                                    {formData.tags && formData.tags.filter(tag => tag.length > 0).length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            {formData.tags.filter(tag => tag.length > 0).map((tag, idx) => (
-                                                <span 
-                                                    key={idx} 
-                                                    className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-xs rounded-full"
-                                                >
-                                                    {tag}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const inputValue = formData.tags?.join(", ") || "";
-                                                            const tagsArray = inputValue.split(",").map(t => t.trim());
-                                                            const newTags = tagsArray.filter((_, i) => i !== idx);
-                                                            setFormData({ ...formData, tags: newTags });
-                                                        }}
-                                                        className="hover:text-primary/70"
+                                        <p className="text-xs text-muted-foreground">Escribe las etiquetas separadas por comas</p>
+                                        {formData.tags && formData.tags.filter(tag => tag.length > 0).length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {formData.tags.filter(tag => tag.length > 0).map((tag, idx) => (
+                                                    <span 
+                                                        key={idx} 
+                                                        className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-xs rounded-full"
                                                     >
-                                                        <X className="h-3 w-3" />
-                                                    </button>
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Nota sobre puntos */}
-                                <div className="bg-primary/5 border border-gray-400 rounded-lg p-3">
-                                    <p className="text-sm text-muted-foreground">
-                                        <span className="font-semibold text-primary">Nota:</span> Los puntos se asignan automáticamente según la dificultad seleccionada
-                                    </p>
-                                </div>
-
-                                {/* Botones de acción */}
-                                <div className="flex gap-2 pt-2">
-                                    <button
-                                        type="button"
-                                        onClick={resetForm}
-                                        className="flex-1 px-2 py-1 text-sm border-2 border-border text-muted-foreground rounded-lg font-medium hover:text-black hover:border-black transition-colors"
-                                        disabled={loading}
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="flex-1 px-2 py-1 text-sm bg-transparent border-2 border-primary text-primary rounded-lg font-medium hover:bg-primary hover:text-white transition-colors"
-                                        disabled={loading}
-                                    >
-                                        {loading ? (
-                                            <div className="flex items-center justify-center gap-2">
-                                                <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                                Guardando...
+                                                        {tag}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const inputValue = formData.tags?.join(", ") || "";
+                                                                const tagsArray = inputValue.split(",").map(t => t.trim());
+                                                                const newTags = tagsArray.filter((_, i) => i !== idx);
+                                                                setFormData({ ...formData, tags: newTags });
+                                                            }}
+                                                            className="hover:text-primary/70"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </span>
+                                                ))}
                                             </div>
-                                        ) : (
-                                            editingChallenge ? "Actualizar Desafío" : "Crear Desafío"
                                         )}
-                                    </button>
-                                </div>
-                            </form>
+                                    </div>
+
+                                    {/* Nota sobre puntos */}
+                                    <div className="bg-primary/5 border border-gray-400 rounded-lg p-3">
+                                        <p className="text-sm text-muted-foreground">
+                                            <span className="font-semibold text-primary">Nota:</span> Los puntos se asignan automáticamente según la dificultad seleccionada
+                                        </p>
+                                    </div>
+
+                                    {/* Botones de acción */}
+                                    <div className="flex gap-2 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={resetForm}
+                                            className="flex-1 px-2 py-1 text-sm border-2 border-border text-muted-foreground rounded-lg font-medium hover:text-black hover:border-black transition-colors"
+                                            disabled={loading}
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="flex-1 px-2 py-1 text-sm bg-transparent border-2 border-primary text-primary rounded-lg font-medium hover:bg-primary hover:text-white transition-colors"
+                                            disabled={loading}
+                                        >
+                                            {loading ? (
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Guardando...
+                                                </div>
+                                            ) : (
+                                                editingChallenge ? "Actualizar Desafío" : "Crear Desafío"
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </DialogContent>
-                </Dialog>
+                    </div>
+                )}
 
                 {/* Dialog de confirmación para desactivar */}
                 {showDeleteConfirm && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                        <Card className="w-full max-w-md">
-                            <CardHeader>
-                                <CardTitle className="text-xl flex items-center gap-2">
-                                    <Trash2 className="h-5 w-5 text-red-500" />
-                                    Desactivar Desafío
-                                </CardTitle>
-                                <CardDescription>
-                                    ¿Estás seguro de que deseas desactivar este desafío?
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+                        <div 
+                            className="fixed inset-0 bg-black/50 z-[99998]"
+                            onClick={() => {
+                                setShowDeleteConfirm(false);
+                                setChallengeToDelete(null);
+                            }}
+                        />
+                        
+                        <div className="relative bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl z-[99999]">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    {selectedChallenge?.isActive ? (
+                                        <>
+                                            <Trash2 className="h-5 w-5 text-destructive" />
+                                            <h2 className="text-xl font-bold">Desactivar Desafío</h2>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <RefreshCw className="h-5 w-5 text-active" />
+                                            <h2 className="text-xl font-bold">Reactivar Desafío</h2>
+                                        </>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteConfirm(false);
+                                        setChallengeToDelete(null);
+                                    }}
+                                    className="p-2 hover:bg-background rounded-lg transition"
+                                >
+                                    <X className="w-5 h-5 text-muted-foreground" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
                                 <p className="text-sm text-muted-foreground">
-                                    El desafío no será eliminado, solo se desactivará. Podrás reactivarlo más tarde si lo deseas.
+                                    {selectedChallenge?.isActive
+                                        ? '¿Estás seguro de que deseas desactivar este desafío? El desafío no estará disponible para los usuarios hasta que sea reactivado.'
+                                        : '¿Estás seguro de que deseas reactivar este desafío? El desafío volverá a estar disponible para los usuarios.'
+                                    }
                                 </p>
                                 <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
+                                    <button
                                         onClick={() => {
                                             setShowDeleteConfirm(false);
                                             setChallengeToDelete(null);
                                         }}
-                                        className="flex-1"
+                                        className="flex-1 px-2 py-1 border-2 border-border text-muted-foreground text-sm rounded-lg font-medium hover:text-black hover:border-black transition-colors"
                                         disabled={loading}
                                     >
                                         Cancelar
-                                    </Button>
-                                    <Button
+                                    </button>
+                                    <button
                                         onClick={handleDeleteConfirm}
-                                        className="flex-1 bg-red-500 hover:bg-red-600"
+                                        className={`flex-1 px-2 py-1 text-sm rounded-lg font-medium transition-colors ${
+                                            selectedChallenge?.isActive
+                                                ? 'bg-transparent hover:bg-destructive hover:text-white border-destructive border-2 text-destructive'
+                                                : 'bg-transparent hover:bg-active hover:text-white border-active border-2 text-active'
+                                        }`}
                                         disabled={loading}
                                     >
-                                        {loading ? "Desactivando..." : "Desactivar"}
-                                    </Button>
+                                        {loading ? (
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                Procesando...
+                                            </div>
+                                        ) : (
+                                            selectedChallenge?.isActive ? 'Aceptar desactivación' : 'Aceptar reactivación'
+                                        )}
+                                    </button>
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     </div>
                 )}
             </main >

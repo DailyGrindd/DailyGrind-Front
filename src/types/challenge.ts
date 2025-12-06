@@ -85,11 +85,11 @@ export interface CreateChallengeAdminRequest {
     difficulty: 1 | 2 | 3;
     points: number;
     tags?: string[];
-    isActive?: boolean;
-    minLevel?: number;
-    preRequisiteChallenge?: string;
-    maxPerDay?: number;
-    minUserLevel?: number;
+    isActive: boolean;
+    minLevel: number;
+    preRequisiteChallenge?: string | null; 
+    maxPerDay: number;
+    minUserLevel: number;
 }
 
 export interface UpdateChallengeAdminRequest {
@@ -100,7 +100,7 @@ export interface UpdateChallengeAdminRequest {
     points?: number;
     tags?: string[];
     minLevel?: number;
-    prerequisiteChallenge?: string;
+    preRequisiteChallenge?: string | null;
     maxPerDay?: number;
     minUserLevel?: number;
 }
