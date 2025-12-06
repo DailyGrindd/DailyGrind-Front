@@ -126,7 +126,7 @@ export interface SearchUser {
     level: number;
     profile?: {
         displayName?: string;
-        avatar?: string;
+        avatarUrl?: string;
     };
     lastActive: string;
 }
