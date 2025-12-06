@@ -12,7 +12,7 @@ import { ProtectedRouter } from "./protectedRouter";
 import { Profile } from "../pages/profile";
 import { PublicProfile } from "../pages/publicProfile";
 import { ChallengesAdmin } from "../pages/challengesAdmin";
-
+import { Ranking } from "../pages/ranking";
 export const AppRouter = () => {
     const { isAuthenticated, user, initialCheckDone } = useSelector((state: RootState) => state.auth);
 
@@ -56,7 +56,14 @@ export const AppRouter = () => {
                     </ProtectedRouter>
                 }
             />
-            
+            <Route
+                path="/ranking"
+                element={
+                    <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
+                        <Ranking />
+                    </ProtectedRouter>
+                }
+            />
             {/* Nueva ruta de perfil */}
             <Route 
                 path="/profile"

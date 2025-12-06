@@ -175,7 +175,8 @@ export const checkSession = async () => {
       level: data.level,
       displayName: data.displayName,
       totalPoints: data.totalPoints,
-      avatarUrl: data.avatarUrl
+      avatarUrl: data.avatarUrl,
+      zone: data.zone
     };
 
   } catch (error: any) {

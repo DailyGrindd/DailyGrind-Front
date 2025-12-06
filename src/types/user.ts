@@ -43,6 +43,7 @@ export interface AuthUser {
     displayName?: string;
     totalPoints?: number;
     avatarUrl?: string;
+    zone?: string;
 }
 
 // Response get user
