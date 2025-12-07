@@ -60,6 +60,9 @@ export interface CompleteMissionResponse {
     };
     levelUp?: {
         message: string;
+        previousLevel?: number;
+        newLevel?: number;
+        pointsUsed?: number;
     };
 }
 

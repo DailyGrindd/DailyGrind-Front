@@ -182,13 +182,31 @@ export function Daily() {
             // Actualizar Redux para que el header se actualice
             await dispatch(checkSessionThunk());
             
+            // Debug: Log de la respuesta completa
+            console.log("📊 Respuesta completar misión:", {
+                hasLevelUp: !!response.levelUp,
+                levelInfo: response.levelInfo,
+                fullResponse: response
+            });
+            
             // Verificar si hay level up
-            if (response.levelUp && response.levelInfo) {
+            if (response.levelUp) {
+                const newLevel = response.levelInfo?.currentLevel || response.levelUp.newLevel || (user?.level || 1) + 1;
+                
+                console.log("🎉 LEVEL UP DETECTADO:", {
+                    message: response.levelUp.message,
+                    newLevel,
+                    previousLevel: response.levelUp.previousLevel
+                });
+                
                 setLevelUpData({
                     message: response.levelUp.message,
-                    newLevel: response.levelInfo.currentLevel
+                    newLevel: newLevel
                 });
+                
+                // Mostrar modal después de un breve delay
                 setTimeout(() => {
+                    console.log("📱 Mostrando modal de level up");
                     setShowLevelUpModal(true);
                 }, 500);
             }
@@ -644,7 +662,110 @@ export function Daily() {
                                 </CardContent>
                             </Card>
 
-                            {/* Misiones Personales (Slots 4-5) */}
+                            {/* Misiones Globales Desbloqueadas (Slots > 3 con type "global") */}
+                            {dailyQuest.missions.some(m => m.slot > 3 && m.type === "global") && (
+                                <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/20">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Star className="h-5 w-5 text-yellow-500" />
+                                            Desafíos Desbloqueados
+                                        </CardTitle>
+                                        <CardDescription>
+                                            Estos desafíos se desbloquearon al completar sus prerequisitos. ¡Sigue completando para desbloquear más!
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {dailyQuest.missions
+                                                .filter(m => m.slot > 3 && m.type === "global")
+                                                .sort((a, b) => a.slot - b.slot)
+                                                .map(mission => {
+                                                    const challenge = getMissionChallenge(mission);
+                                                    
+                                                    return (
+                                                        <div 
+                                                            key={mission.slot}
+                                                            className={`border-2 rounded-lg p-4 relative ${getStatusColor(mission.status)}`}
+                                                        >
+                                                            {/* Badge de desbloqueo */}
+                                                            <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 rounded-full px-2 py-1 text-xs font-bold shadow-md flex items-center gap-1">
+                                                                <Star className="h-3 w-3 fill-yellow-900" />
+                                                                Slot {mission.slot}
+                                                            </div>
+                                                            
+                                                            <div className="flex items-start justify-between mb-3 mt-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-2xl">{challenge ? getCategoryIcon(challenge.category) : "🎯"}</span>
+                                                                    <span className="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">🔓 Desbloqueado</span>
+                                                                </div>
+                                                                {getStatusIcon(mission.status)}
+                                                            </div>
+                                                            
+                                                            {challenge ? (
+                                                                <>
+                                                                    <h3 className="font-bold text-foreground mb-2">{challenge.title}</h3>
+                                                                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                                                        {challenge.description}
+                                                                    </p>
+                                                                    
+                                                                    <div className="flex items-center justify-between mb-3">
+                                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getDifficultyColor(challenge.difficulty)}`}>
+                                                                            {getDifficultyLabel(challenge.difficulty)}
+                                                                        </span>
+                                                                        <div className="flex items-center gap-1 text-primary font-bold">
+                                                                            <Flame className="h-4 w-4" />
+                                                                            <span>{challenge.points} pts</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    {mission.status === "pending" && (
+                                                                        <div className="flex gap-2">
+                                                                            <Button 
+                                                                                size="sm" 
+                                                                                onClick={() => handleComplete(mission.slot)}
+                                                                                disabled={loading}
+                                                                                className="flex-1"
+                                                                            >
+                                                                                <CheckCircle className="h-4 w-4 mr-1" />
+                                                                                Completar
+                                                                            </Button>
+                                                                            <Button 
+                                                                                size="sm" 
+                                                                                variant="ghost"
+                                                                                onClick={() => handleSkip(mission.slot)}
+                                                                                disabled={loading}
+                                                                            >
+                                                                                <SkipForward className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {mission.status === "completed" && (
+                                                                        <div className="text-center text-green-600 font-semibold text-sm">
+                                                                            ✓ Completada (+{mission.pointsAwarded} pts)
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    {mission.status === "skipped" && (
+                                                                        <div className="text-center text-gray-500 text-sm">
+                                                                            Skipeada
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                <div className="text-center text-gray-500 text-sm py-8">
+                                                                    Desafío no disponible
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Misiones Personales (Slots para desafíos personalizados) */}
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
@@ -657,8 +778,10 @@ export function Daily() {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Slots fijos 4 y 5 para personales */}
                                         {[4, 5].map(slot => {
-                                            const mission = dailyQuest.missions.find(m => m.slot === slot);
+                                            // Solo mostrar misiones que sean type "personal" o slots vacíos
+                                            const mission = dailyQuest.missions.find(m => m.slot === slot && m.type === "personal");
                                             const challenge = mission ? getMissionChallenge(mission) : null;
                                             
                                             return (
