@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { Header } from "../components/header";
 import { 
   User, Trophy, Target, Flame, Share2, Settings, Award, 
-  BarChart3, Medal, Calendar, X, Check, Globe, Lock, Loader2 
+  BarChart3, Calendar, X, Check, Globe, Lock, Loader2 
 } from "lucide-react";
 import { Button } from "../components/button";  
 import { Select } from "../components/select";
@@ -175,22 +175,6 @@ export function Profile() {
     } finally {
       setEditLoading(false);
     }
-  };
-
-  const getDifficultyLabel = (difficulty: number) => {
-    const labels = ["Común", "Poco común", "Raro", "Épico", "Legendario"];
-    return labels[difficulty - 1] || "Común";
-  };
-
-  const getDifficultyColor = (difficulty: number) => {
-    const colors = [
-      "text-gray-500",
-      "text-green-600",
-      "text-blue-600",
-      "text-purple-600",
-      "text-yellow-600"
-    ];
-    return colors[difficulty - 1] || "text-gray-500";
   };
 
   if (loading) {
