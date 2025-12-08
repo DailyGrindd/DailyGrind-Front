@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Header } from "../components/header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/card";
 import { Button } from "../components/button";
@@ -50,7 +49,6 @@ export function Daily() {
     
     const { user } = useSelector((state: RootState) => state.auth);
     const dispatch = useDispatch<any>();
-    const navigate = useNavigate();
 
     useEffect(() => {
         loadDailyQuest();
