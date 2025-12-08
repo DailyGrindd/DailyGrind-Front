@@ -603,7 +603,7 @@ export function Challenges() {
                                             size="lg"
                                             onClick={() => {
                                                 setSelectedChallenge(null);
-                                                window.location.href = "/daily";
+                                                navigate("/daily");
                                             }}
                                         >
                                             <Plus className="h-5 w-5 mr-2" />
