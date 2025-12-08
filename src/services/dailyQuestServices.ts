@@ -1,9 +1,11 @@
 import { instanceAxios } from "../api/axios";
-import type { 
-    DailyQuest, 
-    AssignPersonalChallengeRequest, 
-    HistoryResponse, 
-    CompleteMissionResponse 
+import type {
+    DailyQuest,
+    AssignPersonalChallengeRequest,
+    HistoryResponse,
+    CompleteMissionResponse,
+    StatsPerDay,
+    MissionsTypeStats
 } from "../types/dailyQuest";
 
 // Inicializar DailyQuest del día (genera 3 misiones globales)
@@ -59,3 +61,33 @@ export const skipMission = async (slot: number): Promise<{ message: string; dail
     const response = await instanceAxios.patch(`/daily-quests/skip/${slot}`);
     return response.data;
 };
+
+// Obtener estadisiticas diarias de misiones
+export const getDailyStats = async (): Promise<StatsPerDay> => {
+    try {
+        const { data } = await instanceAxios.get<StatsPerDay>(`/daily-quests/mission-state`);
+        return data;
+    } catch (error: any) {
+        console.error("Service error:", error.response || error); // Debug
+        throw new Error(
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Error al obtener las estadísticas diarias de misiones"
+        );
+    }
+}
+
+// Obtener estadisticas de cada tipo de mision
+export const getMissionsTypeStats = async (): Promise<MissionsTypeStats> => {
+    try {
+        const { data } = await instanceAxios.get<MissionsTypeStats>(`/daily-quests/mission-typestats`);
+        return data;
+    } catch (error: any) {
+        console.error("Service error:", error.response || error); // Debug
+        throw new Error(
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Error al obtener las estadísticas de misiones"
+        );
+    }
+}

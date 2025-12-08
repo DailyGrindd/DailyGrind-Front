@@ -1,5 +1,5 @@
 import { instanceAxios } from "../api/axios";
-import type { Challenge, CreateChallengeRequest, UpdateChallengeRequest } from "../types/challenge";
+import type { CategoryStatsResponse, Challenge, CreateChallengeAdminRequest, CreateChallengeRequest, UpdateChallengeRequest, UpdateChallengeAdminRequest } from "../types/challenge";
 
 // Obtener todos los desafíos con filtros opcionales
 export const getAllChallenges = async (filters?: {
@@ -32,6 +32,18 @@ export const createChallenge = async (data: CreateChallengeRequest): Promise<{ m
 
 // Actualizar desafío
 export const updateChallenge = async (id: string, data: UpdateChallengeRequest): Promise<{ message: string; challenge: Challenge }> => {
+    const response = await instanceAxios.put(`/challenges/${id}`, data);
+    return response.data;
+};
+
+// Crear nuevo desafío global
+export const createChallengeAdmin = async (data: CreateChallengeAdminRequest): Promise<{ message: string; challenge: Challenge }> => {
+    const response = await instanceAxios.post("/challenges", data);
+    return response.data;
+};
+
+// Actualizar desafío
+export const updateChallengeAdmin = async (id: string, data: UpdateChallengeAdminRequest): Promise<{ message: string; challenge: Challenge }> => {
     const response = await instanceAxios.put(`/challenges/${id}`, data);
     return response.data;
 };
@@ -81,4 +93,19 @@ export const completeChallenge = async (id: string): Promise<{ message: string; 
 export const getChallengeStats = async (): Promise<any> => {
     const response = await instanceAxios.get("/challenges/stats");
     return response.data;
+};
+
+// Obtener estadísticas por categoría
+export const getCategoryStats = async (): Promise<CategoryStatsResponse> => {
+    try {
+        const { data } = await instanceAxios.get<CategoryStatsResponse>(`/challenges/stats-admin`);
+        return data;
+    } catch (error: any) {
+        console.error("Service error:", error.response || error); // Debug
+        throw new Error(
+            error.response?.data?.message || 
+            error.response?.data?.error ||
+            "Error al obtener las estadísticas por categoría"
+        );
+    }
 };

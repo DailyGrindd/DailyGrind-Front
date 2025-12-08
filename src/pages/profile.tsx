@@ -13,16 +13,37 @@ import { checkSessionThunk } from "../store/authSlice";
 import { Input } from "../components/input";
 import { getMyProfile, updateProfile } from "../services/profileService";
 import type {UserProfile, EditProfileForm} from "../types/profile";
+import { Label } from "../components/label";
 
 
-type TabType = "badges" | "achievements" | "statistics";
+type TabType =  "achievements" | "statistics";
+
+const AVATAR_OPTIONS = [
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Luna",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Max",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Charlie",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Bella",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Rocky",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Buddy",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Daisy",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Molly",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Bailey",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Sadie"
+];
 
 export function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>("badges");
+  const [activeTab, setActiveTab] = useState<TabType>("achievements");
+  const [levelInfo, setLevelInfo] = useState<any>(null);
   
+  // Estados para avatar picker
+  const [selectedAvatar, setSelectedAvatar] = useState<string>("");
+  const [showAvatarPicker, setShowAvatarPicker] = useState<boolean>(false);
+
   // Estados para el modal de edición
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState<EditProfileForm>({
@@ -44,6 +65,7 @@ export function Profile() {
 
   useEffect(() => {
     fetchProfile();
+    fetchLevelInfo();
   }, [navigate, userEmail]);
 
   const fetchProfile = async () => {
@@ -62,6 +84,17 @@ export function Profile() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLevelInfo = async () => {
+    try {
+      const { instanceAxios } = await import("../api/axios");
+      const response = await instanceAxios.get("/users/level/info");
+      console.log("Level Info Response:", response.data);
+      setLevelInfo(response.data.levelInfo);
+    } catch (error) {
+      console.error("Error loading level info:", error);
     }
   };
 
@@ -92,6 +125,7 @@ export function Profile() {
         zone: profile.user.profile.zone || "",
         isPublic: profile.user.profile.isPublic ?? true
       });
+      setSelectedAvatar(profile.user.profile.avatarUrl || AVATAR_OPTIONS[0]);
     }
     setEditError(null);
     setIsEditModalOpen(true);
@@ -109,7 +143,12 @@ export function Profile() {
       return;
     }
     try {
-      await updateProfile(userEmail, editForm);
+      const updatedData = {
+        ...editForm,
+        avatarUrl: selectedAvatar
+      };
+      
+      await updateProfile(userEmail, updatedData);
       // Actualizar el estado local
       if (profile) {
         setProfile({
@@ -118,10 +157,10 @@ export function Profile() {
             ...profile.user,
             profile: {
               ...profile.user.profile,
-              displayName: editForm.displayName,
-              avatarUrl: editForm. avatarUrl,
-              zone: editForm.zone,
-              isPublic: editForm.isPublic
+              displayName: updatedData.displayName,
+              avatarUrl: updatedData.avatarUrl,
+              zone: updatedData.zone,
+              isPublic: updatedData.isPublic
             }
           }
         });
@@ -243,36 +282,51 @@ export function Profile() {
                 />
               </div>
 
-              {/* Avatar URL */}
-              {/* Avatar URL */}
-              {/* <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Avatar URL
-                </label>
-                <input
-                  type="text"
-                  value={editForm.avatarUrl}
-                  onChange={(e) => setEditForm({ ...editForm, avatarUrl: e.target.value })}
-                  className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
-                  placeholder="https://ejemplo.com/avatar.png"
-                />
-                
-                {editForm.avatarUrl && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Preview:</span>
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-border bg-background">
-                      <img 
-                        src={editForm.avatarUrl} 
-                        alt="Avatar preview" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
+              {/* Selector de Avatar */}
+              <div className="space-y-2">
+                  <Label>Avatar</Label>
+                  <div className="flex items-center gap-4">
+                      <img
+                          src={selectedAvatar}
+                          alt="Avatar actual"
+                          className="w-20 h-20 rounded-full border-4 border-purple-200"
                       />
-                    </div>
+                      <Button
+                          type="button"
+                          onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                          variant="outline"
+                      >
+                          {showAvatarPicker ? "Cerrar" : "Cambiar Avatar"}
+                      </Button>
                   </div>
-                )}
-              </div> */}
+
+                  {/* Grid de avatares */}
+                  {showAvatarPicker && (
+                      <div className="grid grid-cols-6 gap-3 p-4 bg-gray-50 rounded-lg">
+                          {AVATAR_OPTIONS.map((avatarUrl, index) => (
+                              <button
+                                  key={index}
+                                  type="button"
+                                  onClick={() => {
+                                      setSelectedAvatar(avatarUrl);
+                                      setShowAvatarPicker(false);
+                                  }}
+                                  className={`w-16 h-16 rounded-full transition-all hover:scale-110 ${
+                                      selectedAvatar === avatarUrl 
+                                          ? "ring-4 ring-purple-500 scale-110" 
+                                          : "hover:ring-2 hover:ring-purple-300"
+                                  }`}
+                              >
+                                  <img
+                                      src={avatarUrl}
+                                      alt={`Avatar ${index + 1}`}
+                                      className="w-full h-full rounded-full"
+                                  />
+                              </button>
+                          ))}
+                      </div>
+                  )}
+              </div>
               
               {/* Zona */}
               <div>
@@ -286,7 +340,6 @@ export function Profile() {
                 >
                   <option value="">Selecciona tu provincia</option>
                   <option value="Buenos Aires">Buenos Aires</option>
-                  <option value="CABA">Ciudad Autónoma de Buenos Aires</option>
                   <option value="Catamarca">Catamarca</option>
                   <option value="Chaco">Chaco</option>
                   <option value="Chubut">Chubut</option>
@@ -451,6 +504,22 @@ export function Profile() {
                 </div>
               </div>
 
+              {/* Barra de nivel compacta */}
+              {levelInfo && (
+                <div className="mt-6 w-full max-w-md mx-auto">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                    <span className="font-medium">Nivel {levelInfo.currentLevel}</span>
+                    <span>{levelInfo.currentLevelPoints}/{levelInfo.pointsRequiredForNextLevel} XP</span>
+                  </div>
+                  <div className="h-2 bg-background rounded-full overflow-hidden border border-border">
+                    <div
+                      className="h-full bg-gradient-to-r from-accent via-primary to-secondary transition-all duration-500"
+                      style={{ width: `${levelInfo.progressPercent}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
               {/* Botones de acción */}
               <div className="flex gap-3 mt-6">
                 <Button className="gap-2" onClick={openEditModal}>
@@ -515,17 +584,6 @@ export function Profile() {
           {/* Tabs */}
           <div className="flex gap-2 mt-6 bg-card p-1 rounded-lg border border-border shadow-sm">
             <button
-              onClick={() => setActiveTab("badges")}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
-                activeTab === "badges"
-                  ?  "bg-primary text-white"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background"
-              }`}
-            >
-              <Medal className="w-4 h-4 inline mr-2" />
-              Badges
-            </button>
-            <button
               onClick={() => setActiveTab("achievements")}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
                 activeTab === "achievements"
@@ -551,45 +609,6 @@ export function Profile() {
 
           {/* Tab Content */}
           <div className="mt-6">
-            {activeTab === "badges" && (
-              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold mb-2 text-foreground">Tus Badges</h2>
-                <p className="text-muted-foreground text-sm mb-6">
-                  Obtenidos {badges.length} badges
-                </p>
-
-                {badges.length === 0 ?  (
-                  <div className="text-center py-12">
-                    <Medal className="w-16 h-16 text-border mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aún no tienes badges</p>
-                    <p className="text-muted-foreground text-sm mt-2">¡Completa desafíos para ganar badges!</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {badges.map((badgeItem, index) => (
-                      <div
-                        key={index}
-                        className="bg-background rounded-xl p-6 text-center border border-border hover:border-primary/30 transition hover:shadow-md"
-                      >
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-card border border-border flex items-center justify-center">
-                          {badgeItem.badge. iconUrl ? (
-                            <img src={badgeItem. badge.iconUrl} alt={badgeItem.badge.name} className="w-10 h-10" />
-                          ) : (
-                            <Trophy className="w-8 h-8 text-secondary" />
-                          )}
-                        </div>
-                        <h3 className="font-semibold text-foreground">{badgeItem. badge.name}</h3>
-                        <p className="text-muted-foreground text-sm mt-1">{badgeItem.badge. description}</p>
-                        <span className={`inline-block mt-3 text-xs font-medium ${getDifficultyColor(badgeItem.badge.difficulty)}`}>
-                          {getDifficultyLabel(badgeItem. badge.difficulty)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
             {activeTab === "achievements" && (
               <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
                 <h2 className="text-xl font-bold mb-2 text-foreground">Tus Logros</h2>

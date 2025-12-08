@@ -43,6 +43,7 @@ export interface AuthUser {
     displayName?: string;
     totalPoints?: number;
     avatarUrl?: string;
+    zone?: string;
 }
 
 // Response get user
@@ -125,7 +126,17 @@ export interface SearchUser {
     level: number;
     profile?: {
         displayName?: string;
-        avatar?: string;
+        avatarUrl?: string;
     };
     lastActive: string;
+}
+
+export interface zoneInfo {
+    zone: string;
+    count: number;
+}
+
+export interface provinceInfo {
+    totalProvinces: number;
+    data: zoneInfo[];
 }

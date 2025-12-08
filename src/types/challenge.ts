@@ -7,6 +7,7 @@ export interface Challenge {
         profile?: {
             displayName: string;
             avatarUrl?: string;
+            isPublic?: boolean;
         };
     };
     title: string;
@@ -75,6 +76,35 @@ export interface UpdateChallengeRequest {
     minUserLevel?: number;
 }
 
+export interface CreateChallengeAdminRequest {
+    type: "global";
+    ownerUser: string;
+    title: string;
+    description: string;
+    category: ChallengeCategory;
+    difficulty: 1 | 2 | 3;
+    points: number;
+    tags?: string[];
+    isActive: boolean;
+    minLevel: number;
+    preRequisiteChallenge?: string | null; 
+    maxPerDay: number;
+    minUserLevel: number;
+}
+
+export interface UpdateChallengeAdminRequest {
+    title?: string;
+    description?: string;
+    category?: ChallengeCategory;
+    difficulty?: 1 | 2 | 3;
+    points?: number;
+    tags?: string[];
+    minLevel?: number;
+    preRequisiteChallenge?: string | null;
+    maxPerDay?: number;
+    minUserLevel?: number;
+}
+
 export const getDifficultyPoints = (difficulty: 1 | 2 | 3): number => {
     const pointsMap = {
         1: 10, // Fácil
@@ -92,3 +122,14 @@ export const getDifficultyLabel = (difficulty: 1 | 2 | 3): string => {
     };
     return labelMap[difficulty];
 };
+
+export interface CategoryStats {
+    category: string;
+    totalChallenges: number;
+    totalAssigned: number;
+    totalCompleted: number;
+}
+
+export interface CategoryStatsResponse {
+    data: CategoryStats[];
+}

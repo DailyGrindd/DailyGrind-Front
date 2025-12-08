@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "../components/header";
-import { 
+import {
   User, Trophy, Target, Medal, Award, BarChart3, Calendar, ArrowLeft
 } from "lucide-react";
 import { Button } from "../components/button";
@@ -19,12 +19,12 @@ export function PublicProfile() {
   const [activeTab, setActiveTab] = useState<TabType>("badges");
   const navigate = useNavigate();
 
-    //buscar y cargar el perfil público al montar el componente o cambiar userName
-   useEffect(() => {
+  //buscar y cargar el perfil público al montar el componente o cambiar userName
+  useEffect(() => {
     fetchPublicProfile();
   }, [userName]);
 
-   const fetchPublicProfile = async () => {
+  const fetchPublicProfile = async () => {
     if (!userName) {
       setError("Usuario no encontrado");
       setLoading(false);
@@ -32,16 +32,17 @@ export function PublicProfile() {
     }// si no hay userName, no hacer nada
     // llamar al servicio para obtener el perfil público
     try {
-        setLoading(true);
-        const profileData = await getPublicProfile(userName);
-        setProfile(profileData);
+      setLoading(true);
+      const profileData = await getPublicProfile(userName);
+      setProfile(profileData);
     } catch (err: any) {
-        setError(err.response?.data?.error || "Error al cargar el perfil público");
+      setError(err.response?.data?.error || "Error al cargar el perfil público");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-    };
-  const getDifficultyLabel = (difficulty: number) => {
+  };
+
+  /*const getDifficultyLabel = (difficulty: number) => {
     const labels = ["Común", "Poco común", "Raro", "Épico", "Legendario"];
     return labels[difficulty - 1] || "Común";
   };
@@ -55,7 +56,7 @@ export function PublicProfile() {
       "text-yellow-600"
     ];
     return colors[difficulty - 1] || "text-gray-500";
-  };
+  };*/
 
   if (loading) {
     return (
@@ -94,8 +95,8 @@ export function PublicProfile() {
 
   if (!profile) return null;
 
-  const { user, badges, recentActivity } = profile;
-  
+  const { user, recentActivity } = profile;
+
   // Valores por defecto si recentActivity no está disponible
   const activityData = recentActivity?.last30Days || {
     totalCompleted: 0,
@@ -173,6 +174,7 @@ export function PublicProfile() {
 
           {/* Tabs */}
           <div className="flex gap-2 mt-6 bg-card p-1 rounded-lg border border-border shadow-sm">
+            {/* Badges quitada 
             <button
               onClick={() => setActiveTab("badges")}
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
@@ -183,32 +185,30 @@ export function PublicProfile() {
             >
               <Medal className="w-4 h-4 inline mr-2" />
               Badges
-            </button>
+            </button>*/}
             <button
               onClick={() => setActiveTab("achievements")}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
-                activeTab === "achievements"
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${activeTab === "achievements"
                   ? "bg-primary text-white"
                   : "text-muted-foreground hover:text-foreground hover:bg-background"
-              }`}
+                }`}
             >
               <Award className="w-4 h-4 inline mr-2" />
               Logros
             </button>
             <button
               onClick={() => setActiveTab("statistics")}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
-                activeTab === "statistics"
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${activeTab === "statistics"
                   ? "bg-primary text-white"
                   : "text-muted-foreground hover:text-foreground hover:bg-background"
-              }`}
+                }`}
             >
               <BarChart3 className="w-4 h-4 inline mr-2" />
               Estadísticas
             </button>
           </div>
 
-          {/* Tab Content */}
+          {/* Badges quitados 
           <div className="mt-6">
             {activeTab === "badges" && (
               <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
@@ -246,82 +246,82 @@ export function PublicProfile() {
                   </div>
                 )}
               </div>
-            )}
+            )}*/}
 
-            {activeTab === "achievements" && (
-              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold mb-2 text-foreground">Logros</h2>
-                <p className="text-muted-foreground text-sm mb-6">
-                  Actividad de los últimos 30 días
-                </p>
+          {activeTab === "achievements" && (
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-bold mb-2 text-foreground">Logros</h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Actividad de los últimos 30 días
+              </p>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-background rounded-xl p-6 border border-border">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Target className="w-8 h-8 text-accent" />
-                      <span className="text-2xl font-bold text-foreground">{activityData.totalCompleted}</span>
-                    </div>
-                    <p className="text-muted-foreground text-sm">Desafíos completados</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-background rounded-xl p-6 border border-border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Target className="w-8 h-8 text-accent" />
+                    <span className="text-2xl font-bold text-foreground">{activityData.totalCompleted}</span>
                   </div>
+                  <p className="text-muted-foreground text-sm">Desafíos completados</p>
+                </div>
 
-                  <div className="bg-background rounded-xl p-6 border border-border">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Trophy className="w-8 h-8 text-yellow-500" />
-                      <span className="text-2xl font-bold text-foreground">{activityData.totalPointsEarned}</span>
-                    </div>
-                    <p className="text-muted-foreground text-sm">Puntos ganados</p>
+                <div className="bg-background rounded-xl p-6 border border-border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Trophy className="w-8 h-8 text-yellow-500" />
+                    <span className="text-2xl font-bold text-foreground">{activityData.totalPointsEarned}</span>
                   </div>
+                  <p className="text-muted-foreground text-sm">Puntos ganados</p>
+                </div>
 
-                  <div className="bg-background rounded-xl p-6 border border-border">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Medal className="w-8 h-8 text-orange-500" />
-                      <span className="text-2xl font-bold text-foreground">{activityData.globalCompleted}</span>
-                    </div>
-                    <p className="text-muted-foreground text-sm">Desafíos globales</p>
+                <div className="bg-background rounded-xl p-6 border border-border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Medal className="w-8 h-8 text-orange-500" />
+                    <span className="text-2xl font-bold text-foreground">{activityData.globalCompleted}</span>
                   </div>
+                  <p className="text-muted-foreground text-sm">Desafíos globales</p>
+                </div>
 
-                  <div className="bg-background rounded-xl p-6 border border-border">
-                    <div className="flex items-center gap-3 mb-2">
-                      <User className="w-8 h-8 text-primary" />
-                      <span className="text-2xl font-bold text-foreground">{activityData.personalCompleted}</span>
-                    </div>
-                    <p className="text-muted-foreground text-sm">Desafíos personales</p>
+                <div className="bg-background rounded-xl p-6 border border-border">
+                  <div className="flex items-center gap-3 mb-2">
+                    <User className="w-8 h-8 text-primary" />
+                    <span className="text-2xl font-bold text-foreground">{activityData.personalCompleted}</span>
                   </div>
+                  <p className="text-muted-foreground text-sm">Desafíos personales</p>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {activeTab === "statistics" && (
-              <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold mb-6 text-foreground">Estadísticas Generales</h2>
+          {activeTab === "statistics" && (
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-bold mb-6 text-foreground">Estadísticas Generales</h2>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
-                    <span className="text-muted-foreground">Nivel actual</span>
-                    <span className="text-xl font-bold text-accent">{user.level}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
-                    <span className="text-muted-foreground">Puntos totales</span>
-                    <span className="text-xl font-bold text-foreground">{user.stats.totalPoints.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
-                    <span className="text-muted-foreground">Racha actual</span>
-                    <span className="text-xl font-bold text-orange-500">{user.stats.currentStreak} días</span>
-                  </div>
-                  <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
-                    <span className="text-muted-foreground">Total completados</span>
-                    <span className="text-xl font-bold text-primary">{user.stats.totalCompleted}</span>
-                  </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
+                  <span className="text-muted-foreground">Nivel actual</span>
+                  <span className="text-xl font-bold text-accent">{user.level}</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
+                  <span className="text-muted-foreground">Puntos totales</span>
+                  <span className="text-xl font-bold text-foreground">{user.stats.totalPoints.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
+                  <span className="text-muted-foreground">Racha actual</span>
+                  <span className="text-xl font-bold text-orange-500">{user.stats.currentStreak} días</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
+                  <span className="text-muted-foreground">Total completados</span>
+                  <span className="text-xl font-bold text-primary">{user.stats.totalCompleted}</span>
+                </div>
+                {/* Badges quitados 
                   <div className="flex justify-between items-center p-4 bg-background rounded-lg border border-border">
                     <span className="text-muted-foreground">Badges obtenidos</span>
                     <span className="text-xl font-bold text-yellow-500">{badges.length}</span>
-                  </div>
-                </div>
+                  </div>*/}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }

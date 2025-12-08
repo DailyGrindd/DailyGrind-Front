@@ -1,6 +1,6 @@
 import { Button } from "../components/button";
 import { 
-  LayoutDashboard, Heart, Award, Zap, Users, 
+  LayoutDashboard, Heart, Zap, Users, 
   TrendingUp, LogOut, Menu, X, CalendarCheck, Search 
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -72,8 +72,7 @@ export function Header({ currentView }: HeaderProps) {
 
     const menuItems = isAdmin
         ? [
-            { id: "challenge-admin", label: "Desafíos", icon: Zap, path: "/challengesAdmin" },
-            { id: "badge", label: "Logros", icon: Award, path: "/badges" },
+            { id: "challengesAdmin", label: "Desafíos", icon: Zap, path: "/challengesAdmin" },
             { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
             { id: "users", label: "Usuarios", icon: Users, path: "/users" },
         ]
@@ -156,19 +155,21 @@ export function Header({ currentView }: HeaderProps) {
                                     ) : searchResults.length > 0 ? (
                                         <div className="py-2">
                                             {searchResults.map((result) => (
-                                                <button
+                                                <div 
                                                     key={result._id}
                                                     onClick={() => handleUserClick(result.userName)}
-                                                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition"
+                                                    className="cursor-pointer p-3 hover:bg-gray-100 flex items-center gap-3 rounded-lg transition-colors"
                                                 >
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold">
-                                                        {(result.profile?.displayName || result.userName).charAt(0).toUpperCase()}
-                                                    </div>
-                                                    <div className="flex-1 text-left">
-                                                        <p className="font-medium text-foreground">{result.profile?.displayName || result.userName}</p>
+                                                    <img
+                                                        src={result.profile?.avatarUrl || "/default-avatar.png"}
+                                                        alt={result.profile?.displayName}
+                                                        className="w-10 h-10 rounded-full border-2 border-gray-200"
+                                                    />
+                                                    <div>
+                                                        <p className="font-semibold">{result.profile?.displayName}</p>
                                                         <p className="text-xs text-muted-foreground">Nivel {result.level}</p>
                                                     </div>
-                                                </button>
+                                                </div>
                                             ))}
                                         </div>
                                     ) : (

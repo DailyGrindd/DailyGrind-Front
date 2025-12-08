@@ -50,4 +50,41 @@ export interface CompleteMissionResponse {
         totalCompleted: number;
         currentStreak: number;
     };
+    levelInfo?: {
+        currentLevel: number;
+        totalPoints: number;
+        currentLevelPoints: number;
+        pointsToNextLevel: number;
+        pointsRequiredForNextLevel: number;
+        progressPercent: number;
+    };
+    levelUp?: {
+        message: string;
+        previousLevel?: number;
+        newLevel?: number;
+        pointsUsed?: number;
+    };
+}
+
+export interface StatsPerDay {
+    totalSkipped: number;
+    totalPending: number;
+    totalCompleted: number;
+    averageSkipped: string;
+    averagePending: string;
+    averageCompleted: string;
+    period: string;
+}
+
+export interface MissionsTypeStats {
+    global: {
+        total: number;
+        completed: number;
+        percentageCompleted: string;
+    };
+    personal: {
+        total: number;
+        completed: number;
+        percentageCompleted: string;
+    };
 }

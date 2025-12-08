@@ -11,12 +11,15 @@ import { Daily } from "../pages/daily";
 import { ProtectedRouter } from "./protectedRouter";
 import { Profile } from "../pages/profile";
 import { PublicProfile } from "../pages/publicProfile";
-
+import { ChallengesAdmin } from "../pages/challengesAdmin";
+import { Ranking } from "../pages/ranking";
 export const AppRouter = () => {
-    const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+    const { isAuthenticated, user, initialCheckDone } = useSelector((state: RootState) => state.auth);
 
-    // Removido: if (loading) return null; 
-    // Esto causaba que la página se pusiera en blanco durante cualquier proceso de autenticación
+    // Esperar a que se verifique la sesión inicial antes de renderizar rutas
+    if (!initialCheckDone) {
+        return null;
+    }
 
     return (
         <Routes>
@@ -53,9 +56,16 @@ export const AppRouter = () => {
                     </ProtectedRouter>
                 }
             />
-            
-            {/* Nueva ruta de perfil */}
             <Route
+                path="/ranking"
+                element={
+                    <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
+                        <Ranking />
+                    </ProtectedRouter>
+                }
+            />
+            {/* Nueva ruta de perfil */}
+            <Route 
                 path="/profile"
                 element={
                     <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
@@ -95,6 +105,15 @@ export const AppRouter = () => {
                 element={
                     <ProtectedRouter isAllowed={isAuthenticated} redirectTo="/login">
                         <Challenges />
+                    </ProtectedRouter>
+                }
+            />
+
+            <Route
+                path="/challengesAdmin"
+                element={
+                    <ProtectedRouter isAllowed={isAuthenticated && user?.role === "Administrador"} redirectTo="/login">
+                        <ChallengesAdmin />
                     </ProtectedRouter>
                 }
             />

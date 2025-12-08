@@ -1,4 +1,4 @@
-import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, FirebaseRegisterRequest, FirebaseAuthResponse, GetUserResponse, GetUsersResponse, UploadUserRequest, UploadUserResponse } from "../types/user";
+import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, FirebaseRegisterRequest, FirebaseAuthResponse, GetUserResponse, GetUsersResponse, UploadUserRequest, UploadUserResponse, provinceInfo } from "../types/user";
 import { instanceAxios } from "../api/axios";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../config/firebase";
@@ -19,6 +19,20 @@ export const obtenerUsuarios = async (role?: string): Promise<GetUsersResponse[]
 export const obtenerUsuario = async (email: string): Promise<GetUserResponse> => {
     try {
         const { data } = await instanceAxios.get<GetUserResponse>(`/users/${email}`);
+        return data;
+    } catch (error: any) {
+        console.error("Service error:", error.response || error); // Debug
+        throw new Error(
+            error.response?.data?.message || 
+            error.response?.data?.error ||
+            "Error al obtener el usuario"
+        );
+    }
+};
+
+export const obtenerInfoZones = async (): Promise<provinceInfo> => {
+    try {
+        const { data } = await instanceAxios.get<provinceInfo>(`/users/zone-stats`);
         return data;
     } catch (error: any) {
         console.error("Service error:", error.response || error); // Debug
@@ -153,8 +167,6 @@ export const checkSession = async () => {
       { withCredentials: true }
     );
 
-    console.log("Session data:", data);
-
     return {
       _id: data._id,
       email: data.email,
@@ -163,7 +175,8 @@ export const checkSession = async () => {
       level: data.level,
       displayName: data.displayName,
       totalPoints: data.totalPoints,
-      avatarUrl: data.avatarUrl
+      avatarUrl: data.avatarUrl,
+      zone: data.zone
     };
 
   } catch (error: any) {
