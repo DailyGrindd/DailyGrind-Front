@@ -34,8 +34,10 @@ import {
 } from "../services/dailyQuestServices";
 import { getAllChallenges } from "../services/challengeServices";
 import { getDifficultyLabel } from "../types/challenge";
+import { useLocation } from "react-router-dom";
 
 export function Daily() {
+    const location = useLocation();
     const [dailyQuest, setDailyQuest] = useState<DailyQuest | null>(null);
     const [loading, setLoading] = useState(false);
     const [timeRemaining, setTimeRemaining] = useState("");
@@ -452,7 +454,7 @@ export function Daily() {
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
-            <Header currentView="daily" />
+            <Header currentView={location.pathname.includes("daily") ? "daily" : ""} />
             
             <div className="flex-1 bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-6">
                 <div className="max-w-7xl mx-auto space-y-6">
@@ -942,7 +944,7 @@ export function Daily() {
                                         variant="outline"
                                         onClick={() => {
                                             setShowAssignModal(false);
-                                            window.location.href = "/challenges";
+                                            location.pathname = "/challenges";
                                         }}
                                     >
                                         Crear Desafío

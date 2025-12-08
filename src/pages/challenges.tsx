@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Plus, Trophy, Flame, Target, Edit2, Trash2, X, Users, TrendingUp, Calendar, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card";
 import { Button } from "../components/button";
@@ -21,6 +21,7 @@ import type { Challenge, CreateChallengeRequest, ChallengeCategory } from "../ty
 import { CHALLENGE_CATEGORIES, getDifficultyLabel, getDifficultyPoints } from "../types/challenge";
 
 export function Challenges() {
+    const location = useLocation();
     const navigate = useNavigate();
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [loading, setLoading] = useState(false);
@@ -223,7 +224,7 @@ export function Challenges() {
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
-            <Header currentView="challenges" />
+            <Header currentView={location.pathname.includes("challenges") ? "challenges" : ""} />
             
             <div className="flex-1 bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-6">
                 <div className="max-w-7xl mx-auto space-y-6">
@@ -603,7 +604,7 @@ export function Challenges() {
                                             size="lg"
                                             onClick={() => {
                                                 setSelectedChallenge(null);
-                                                window.location.href = "/daily";
+                                                location.pathname = "/daily";
                                             }}
                                         >
                                             <Plus className="h-5 w-5 mr-2" />
