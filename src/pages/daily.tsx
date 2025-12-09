@@ -937,17 +937,6 @@ export function Daily() {
                                         ? "No tienes desafíos personales disponibles" 
                                         : "No hay desafíos de la comunidad disponibles"}
                                 </p>
-                                {challengeViewMode === "my" && (
-                                    <Button 
-                                        variant="outline"
-                                        onClick={() => {
-                                            setShowAssignModal(false);
-                                            window.location.href = "/challenges";
-                                        }}
-                                    >
-                                        Crear Desafío
-                                    </Button>
-                                )}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
